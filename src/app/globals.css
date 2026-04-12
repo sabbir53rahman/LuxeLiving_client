@@ -1,0 +1,231 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-plus-jakarta);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-premium:
+    0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-hover:
+    0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+}
+
+:root {
+  --background: #fafbfc;
+  --foreground: #1a1d23;
+  --card: #ffffff;
+  --card-foreground: #1a1d23;
+  --popover: #ffffff;
+  --popover-foreground: #1a1d23;
+  --primary: #d4af37;
+  --primary-foreground: #1a1d23;
+  --secondary: #2c5f2d;
+  --secondary-foreground: #ffffff;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #fef3c7;
+  --accent-foreground: #92400e;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #d4af37;
+  --radius: 0.75rem;
+
+  /* LuxeLiving Premium Colors */
+  --luxury-gold: #d4af37;
+  --luxury-gold-light: #f4e5c2;
+  --luxury-emerald: #2c5f2d;
+  --luxury-emerald-light: #4a7c59;
+  --luxury-slate: #1a1d23;
+  --luxury-slate-light: #374151;
+  --luxury-cream: #fafbfc;
+  --luxury-ivory: #fef3c7;
+
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --glass-backdrop: blur(8px);
+  --glass-backdrop-strong: blur(16px);
+
+  --chart-1: #d4af37;
+  --chart-2: #2c5f2d;
+  --chart-3: #f59e0b;
+  --chart-4: #10b981;
+  --chart-5: #6366f1;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1d23;
+  --sidebar-primary: #d4af37;
+  --sidebar-primary-foreground: #1a1d23;
+  --sidebar-accent: #f8fafc;
+  --sidebar-accent-foreground: #d4af37;
+  --sidebar-border: #e5e7eb;
+  --sidebar-ring: #d4af37;
+}
+
+.dark {
+  --background: #0a0e1a;
+  --foreground: #f8fafc;
+  --card: #1a1d23;
+  --card-foreground: #f8fafc;
+  --popover: #1a1d23;
+  --popover-foreground: #f8fafc;
+  --primary: #f4e5c2;
+  --primary-foreground: #1a1d23;
+  --secondary: #4a7c59;
+  --secondary-foreground: #ffffff;
+  --muted: #1a1d23;
+  --muted-foreground: #94a3b8;
+  --accent: #92400e;
+  --accent-foreground: #fef3c7;
+  --destructive: #f87171;
+  --destructive-foreground: #0a0e1a;
+  --border: #374151;
+  --input: #374151;
+  --ring: #f4e5c2;
+
+  /* Dark Glassmorphism Variables */
+  --glass-bg: rgba(26, 29, 35, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-backdrop: blur(8px);
+  --glass-backdrop-strong: blur(16px);
+
+  --sidebar: #1a1d23;
+  --sidebar-foreground: #f8fafc;
+  --sidebar-primary: #f4e5c2;
+  --sidebar-primary-foreground: #1a1d23;
+  --sidebar-accent: #374151;
+  --sidebar-accent-foreground: #f4e5c2;
+  --sidebar-border: #374151;
+  --sidebar-ring: #f4e5c2;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+    outline-offset: 2px;
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  
+  .glass-strong {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    -webkit-backdrop-filter: var(--glass-backdrop-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+  
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .glass-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+  
+  .glass-nav {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop-strong);
+    -webkit-backdrop-filter: var(--glass-backdrop-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s ease;
+  }
+  
+  .text-luxury-gold {
+    color: #d4af37;
+  }
+  
+  .bg-luxury-gold {
+    background-color: #d4af37;
+  }
+  
+  .text-luxury-emerald {
+    color: #2c5f2d;
+  }
+  
+  .bg-luxury-emerald {
+    background-color: #2c5f2d;
+  }
+  
+  .text-luxury-slate {
+    color: #1a1d23;
+  }
+  
+  .bg-luxury-slate {
+    background-color: #1a1d23;
+  }
+}
