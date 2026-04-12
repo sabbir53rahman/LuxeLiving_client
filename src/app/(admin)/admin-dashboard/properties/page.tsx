@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Building, Search, Trash2, MapPin, BedDouble, Bath, ArrowUpDown } from "lucide-react";
+import {
+  Building,
+  Search,
+  Trash2,
+  MapPin,
+  BedDouble,
+  Bath,
+  ArrowUpDown,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   useGetPropertiesQuery,
@@ -29,7 +37,9 @@ export default function AdminPropertiesPage() {
   const { data, isLoading, isError } = useGetPropertiesQuery({
     searchTerm: search,
     ...Object.fromEntries(
-      Object.entries(filters).filter(([, value]) => value !== "" && value !== undefined)
+      Object.entries(filters).filter(
+        ([, value]) => value !== "" && value !== undefined,
+      ),
     ),
   });
   const [deleteProperty] = useDeletePropertyMutation();
@@ -47,7 +57,8 @@ export default function AdminPropertiesPage() {
   }[] = data?.data ?? [];
   const total = data?.meta?.total ?? properties.length;
   const limit = data?.meta?.limit ?? 12;
-  const totalPages = data?.meta?.totalPages ?? (total > 0 ? Math.ceil(total / limit) : 0);
+  const totalPages =
+    data?.meta?.totalPages ?? (total > 0 ? Math.ceil(total / limit) : 0);
   const currentPage = data?.meta?.page ?? 1;
   const pagination = { total, limit, page: currentPage, totalPages };
 
@@ -63,7 +74,10 @@ export default function AdminPropertiesPage() {
 
   return (
     <div className="space-y-8">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+      >
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 rounded-xl bg-luxury-gold/10">
             <Building className="h-6 w-6 text-luxury-gold" />
@@ -86,7 +100,7 @@ export default function AdminPropertiesPage() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              setFilters(prev => ({ ...prev, page: 1 }));
+              setFilters((prev) => ({ ...prev, page: 1 }));
             }}
             placeholder="Search by title or location…"
             className="w-full pl-11 pr-4 py-3 rounded-2xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
@@ -99,26 +113,46 @@ export default function AdminPropertiesPage() {
             type="number"
             placeholder="Min Price"
             value={filters.minPrice}
-            onChange={(e) => setFilters(prev => ({ ...prev, minPrice: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                minPrice: e.target.value,
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           />
           <input
             type="number"
             placeholder="Max Price"
             value={filters.maxPrice}
-            onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                maxPrice: e.target.value,
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           />
           <input
             type="text"
             placeholder="Location"
             value={filters.location}
-            onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                location: e.target.value,
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           />
           <select
             value={filters.type}
-            onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, type: e.target.value, page: 1 }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           >
             <option value="">All Types</option>
@@ -131,7 +165,13 @@ export default function AdminPropertiesPage() {
           </select>
           <select
             value={filters.bedrooms}
-            onChange={(e) => setFilters(prev => ({ ...prev, bedrooms: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                bedrooms: e.target.value,
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           >
             <option value="">Bedrooms</option>
@@ -143,7 +183,13 @@ export default function AdminPropertiesPage() {
           </select>
           <select
             value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                status: e.target.value,
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           >
             <option value="">All Status</option>
@@ -153,7 +199,13 @@ export default function AdminPropertiesPage() {
           </select>
           <select
             value={filters.sortBy}
-            onChange={(e) => setFilters(prev => ({ ...prev, sortBy: e.target.value, page: 1 }))}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                sortBy: e.target.value,
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm focus:outline-none focus:ring-2 focus:ring-luxury-gold/50"
           >
             <option value="createdAt">Sort by Date</option>
@@ -162,15 +214,17 @@ export default function AdminPropertiesPage() {
             <option value="location">Sort by Location</option>
           </select>
           <button
-            onClick={() => setFilters(prev => ({ 
-              ...prev, 
-              sortOrder: prev.sortOrder === 'asc' ? 'desc' : 'asc',
-              page: 1 
-            }))}
+            onClick={() =>
+              setFilters((prev) => ({
+                ...prev,
+                sortOrder: prev.sortOrder === "asc" ? "desc" : "asc",
+                page: 1,
+              }))
+            }
             className="px-4 py-2 rounded-xl bg-card border border-border text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
           >
             <ArrowUpDown className="h-4 w-4" />
-            {filters.sortOrder === 'asc' ? 'Low-High' : 'High-Low'}
+            {filters.sortOrder === "asc" ? "Low-High" : "High-Low"}
           </button>
         </div>
       </div>
@@ -235,13 +289,15 @@ export default function AdminPropertiesPage() {
                         <h4 className="font-semibold text-foreground font-heading line-clamp-2 mb-1">
                           {property.title}
                         </h4>
-                        <div className="h-1 bg-gradient-to-r from-luxury-gold via-luxury-gold/60 to-transparent rounded-full" />
+                        <div className="h-1 bg-linear-to-r from-luxury-gold via-luxury-gold/60 to-transparent rounded-full" />
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 text-muted-foreground text-sm">
                         <MapPin className="h-4 w-4 shrink-0" />
-                        <span className="truncate max-w-xs">{property.location}</span>
+                        <span className="truncate max-w-xs">
+                          {property.location}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -264,7 +320,8 @@ export default function AdminPropertiesPage() {
                     <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          property.status === "SOLD" || property.status === "sold"
+                          property.status === "SOLD" ||
+                          property.status === "sold"
                             ? "bg-red-100 text-red-700"
                             : "bg-green-100 text-green-700"
                         }`}
@@ -301,7 +358,7 @@ export default function AdminPropertiesPage() {
         <Pagination
           currentPage={pagination.page}
           totalPages={pagination.totalPages}
-          onPageChange={(page) => setFilters(prev => ({ ...prev, page }))}
+          onPageChange={(page) => setFilters((prev) => ({ ...prev, page }))}
         />
       </div>
     </div>
