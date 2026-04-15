@@ -1,13 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { PropertyCard } from "@/components/ui/PropertyCard";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Home } from "lucide-react";
-import Link from "next/link";
-import { SkeletonCard } from "@/components/ui/SkeletonCard";
 import { useGetPropertiesQuery } from "@/redux/api/propertyApi";
 import { IProperty } from "@/types";
+import Link from "next/link";
+import Image from "next/image";
+import { Home, ArrowRight, MapPin } from "lucide-react";
 
 // Mock data for demonstration
 const mockProperties = [
@@ -81,85 +79,120 @@ export function FeaturedProperties() {
     data?.data && data.data.length > 0 ? data.data.slice(0, 3) : mockProperties;
 
   return (
-    <section className="py-20 bg-linear-to-b from-background to-muted/20">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="py-24 px-10">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Home className="h-6 w-6 text-luxury-gold" />
-            <h2 className="text-3xl md:text-4xl font-bold">
-              Featured <span className="text-luxury-gold">Properties</span>
-            </h2>
+        <div className="flex items-center justify-between mb-16">
+          <div className="text-center">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-5xl font-serif text-white"
+            >
+              FEATURED PORTFOLIOS
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-xl text-white/60 mt-2"
+            >
+              Curated Selection
+            </motion.p>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover our handpicked selection of luxury properties, each
-            offering exceptional quality and unique features.
-          </p>
-        </motion.div>
+          <Link href="/properties">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              whileHover={{ x: 5 }}
+              className="text-luxury-gold hover:text-white transition-colors duration-300 text-sm font-black uppercase tracking-widest"
+            >
+              View All Reports
+            </motion.div>
+          </Link>
+        </div>
 
         {/* Properties Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map((i) => (
-              <SkeletonCard key={i} />
+              <div key={i} className="bg-[#1A1A1A] border border-white/5 rounded-sm p-6 animate-pulse">
+                <div className="h-48 bg-white/10 rounded-sm mb-4"></div>
+                <div className="h-4 bg-white/10 rounded-sm mb-2"></div>
+                <div className="h-4 bg-white/10 rounded-sm"></div>
+              </div>
             ))}
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">
+            <p className="text-white/60">
               Failed to load properties. Please try again later.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {properties.map((property: IProperty, index: number) => (
               <motion.div
                 key={property.id}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
+                whileHover={{ y: -5 }}
+                className="group"
               >
-                <PropertyCard property={property} />
+                <div className="bg-[#1A1A1A] border border-white/5 rounded-sm overflow-hidden">
+                  {/* Property Image */}
+                  <div className="relative aspect-4/3 overflow-hidden">
+                    <div className="relative h-48 overflow-hidden">
+                      <Image
+                        src={property.images?.[0] || "https://images.unsplash.com/photo-1600585154340-e6293ab0b8fd?w=600&q=80"}
+                        alt={property.title}
+                        width={600}
+                        height={400}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    {/* Status Badge */}
+                    <div className="absolute top-4 left-4">
+                      <span className={`px-3 py-1 text-xs font-black uppercase tracking-widest rounded-sm ${
+                        property.featured ? 'bg-luxury-gold' : 'bg-red-500'
+                      }`}>
+                        {property.featured ? 'NEW LISTING' : 'SOLD'}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Property Info */}
+                  <div className="p-6">
+                    <h3 className="text-xl font-serif text-white mb-2 group-hover:text-luxury-gold transition-colors duration-300">
+                      {property.title}
+                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-2xl font-serif text-luxury-gold">
+                        ${property.price?.toLocaleString() || '0'}
+                      </span>
+                      <div className="flex items-center gap-2 text-white/60 text-sm">
+                        <Home className="w-4 h-4" />
+                        <span>{property.bedrooms || 0} beds</span>
+                        <Home className="w-4 h-4 ml-2" />
+                        <span>{property.bathrooms || 0} baths</span>
+                        <Home className="w-4 h-4 ml-2" />
+                        <span>{property.area || 0} sqft</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/60 text-sm">
+                      <MapPin className="w-4 h-4" />
+                      <span>{property.location}</span>
+                    </div>
+                  </div>
+                </div>
+                </div>
               </motion.div>
             ))}
           </div>
         )}
 
-        {/* CTA Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="text-center"
-        >
-          <div className="glass-strong rounded-2xl p-8 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-semibold mb-4">
-              Find Your Perfect Property
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              Browse our complete collection of luxury properties and discover
-              your dream home with personalized assistance from our expert
-              agents.
-            </p>
-            <Link href="/properties">
-              <Button
-                size="lg"
-                className="bg-luxury-gold text-luxury-slate hover:bg-luxury-gold/90 group"
-              >
-                View All Properties
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-          </div>
-        </motion.div>
       </div>
     </section>
   );

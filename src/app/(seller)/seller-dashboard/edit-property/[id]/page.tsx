@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { 
-  ArrowLeft, 
-  Upload, 
-  X, 
+import {
   MapPin,
-  BedDouble,
-  Bath,
-  Square,
-  Building,
+  Loader2,
+  ShieldCheck,
+  Zap,
+  Bell,
+  User,
+  ChevronRight,
+  ArrowLeft,
   Home,
-  DollarSign
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,20 +25,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   useGetPropertyDetailsQuery,
 } from "@/redux/api/propertyApi";
 import { useUpdateSellerPropertyMutation } from "@/redux/api/sellerApi";
+import ImageUpload from "@/components/ui/ImageUpload";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface PropertyFormData {
   title: string;
@@ -54,7 +47,25 @@ interface PropertyFormData {
   images: string[];
 }
 
+// Section Header Component to match the add-property page
+const SectionHeader = ({
+  numeral,
+  title,
+}: {
+  numeral: string;
+  title: string;
+}) => (
+  <div className="flex items-center gap-4 my-8">
+    <div className="h-px w-8 bg-white/10" />
+    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 whitespace-nowrap">
+      {numeral}. <span className="text-white/80">{title}</span>
+    </span>
+    <div className="h-px flex-1 bg-white/10" />
+  </div>
+);
+
 export default function EditPropertyPage() {
+  const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
   const params = useParams();
   const propertyId = params.id as string;
@@ -64,9 +75,9 @@ export default function EditPropertyPage() {
   const [updateProperty, { isLoading: updateLoading }] =
     useUpdateSellerPropertyMutation();
 
-
-  const initialFormData = useMemo((): PropertyFormData => {
-    if (propertyData) {
+  // Get form data from property data or use defaults
+  const getFormData = (): PropertyFormData => {
+    if (propertyData?.data) {
       const property = propertyData.data;
       return {
         title: property.title || "",
@@ -80,7 +91,6 @@ export default function EditPropertyPage() {
         images: property.images || [],
       };
     }
-
     return {
       title: "",
       description: "",
@@ -92,15 +102,9 @@ export default function EditPropertyPage() {
       area: 0,
       images: [],
     };
-  }, [propertyData]);
+  };
 
-  const [formData, setFormData] = useState<PropertyFormData>(initialFormData);
-
-  const initialImagePreviews = useMemo(() => {
-    return propertyData?.data?.images || [];
-  }, [propertyData]);
-
-  const [imagePreviews, setImagePreviews] = useState<string[]>(initialImagePreviews);
+  const [formData, setFormData] = useState<PropertyFormData>(getFormData());
 
   const handleInputChange = (
     field: keyof PropertyFormData,
@@ -112,26 +116,8 @@ export default function EditPropertyPage() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const newPreviews = [...imagePreviews];
-
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        newPreviews.push(reader.result as string);
-        setImagePreviews([...newPreviews]);
-      };
-      reader.readAsDataURL(file);
-    });
-
-    // For now, we'll just store the previews since backend expects string[]
-    setImagePreviews(newPreviews);
-  };
-
-  const removeImage = (index: number) => {
-    const newPreviews = imagePreviews.filter((_, i) => i !== index);
-    setImagePreviews(newPreviews);
+  const handleImagesChange = (urls: string[]) => {
+    setFormData((prev) => ({ ...prev, images: urls }));
   };
 
 
@@ -175,417 +161,315 @@ export default function EditPropertyPage() {
     }
 
     try {
-      toast.loading("Updating property...");
+      const loadingToast = toast.loading("Refining your listing...");
       
-      // Prepare property data to match backend
-      const propertyData = {
-        title: formData.title.trim(),
-        description: formData.description?.trim() || "",
+      // Debug: Log the form data before sending
+      console.log("Updating property with data:", {
+        ...formData,
         price: Number(formData.price),
-        location: formData.location.trim(),
-        type: formData.type.trim(),
         bedrooms: Number(formData.bedrooms),
         bathrooms: Number(formData.bathrooms),
         area: Number(formData.area),
-        images: imagePreviews || [],
-      };
-
-      await updateProperty({ id: propertyId, data: propertyData }).unwrap();
+        images: formData.images,
+      });
       
-      toast.success("Property updated successfully!");
-      
-      // Redirect to my properties page after a short delay
-      setTimeout(() => {
-        window.location.href = "/seller-dashboard/my-properties";
-      }, 1500);
-      
-    } catch (error) {
-      console.error("Failed to update property:", error);
-      
-      // Handle different error scenarios
-      let errorMessage = "Failed to update property. Please try again.";
-      
-      if (error && typeof error === 'object') {
-        const errorObj = error as { data?: { message?: string }; message?: string };
-        if (errorObj.data?.message) {
-          errorMessage = errorObj.data.message;
-        } else if (errorObj.message) {
-          errorMessage = errorObj.message;
+      await updateProperty({ 
+        id: propertyId, 
+        data: {
+          ...formData,
+          price: Number(formData.price),
+          bedrooms: Number(formData.bedrooms),
+          bathrooms: Number(formData.bathrooms),
+          area: Number(formData.area),
+          images: formData.images, // Ensure images are included
         }
-      }
+      }).unwrap();
       
-      toast.error(errorMessage);
+      toast.dismiss(loadingToast);
+      toast.success("Empire refined. Estate updated successfully!");
+      router.push("/seller-dashboard/my-properties");
+    } catch (error: unknown) {
+      toast.dismiss();
+      console.error("Property update failed:", error);
+      const errorMessage = error && typeof error === 'object' && 'data' in error 
+        ? (error as { data?: { message?: string } }).data?.message 
+        : 'Failed to establish listing';
+      toast.error(errorMessage || "Failed to update property");
     }
   };
 
   if (isLoading || propertyLoading) {
     return (
-      <div className="space-y-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-96"></div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="animate-pulse">
-            <div className="h-96 bg-gray-200 rounded-3xl"></div>
-          </div>
-          <div className="animate-pulse">
-            <div className="h-96 bg-gray-200 rounded-3xl"></div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center space-y-6">
+        <Loader2 className="w-12 h-12 text-luxury-gold animate-spin" />
+        <p className="text-white/40 font-black uppercase tracking-[0.3em] text-[10px]">
+          Initializing Interface
+        </p>
       </div>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="p-6 rounded-3xl bg-red-50 border border-red-200">
-        <h2 className="text-xl font-bold text-red-800 mb-2">
-          Authentication Required
-        </h2>
-        <p className="text-red-600">Please log in to edit this property.</p>
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-10">
+        <Card className="max-w-md w-full rounded-[2rem] border-white/5 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <CardContent className="p-12 text-center space-y-6">
+            <ShieldCheck className="w-12 h-12 text-luxury-gold mx-auto" />
+            <h2 className="text-2xl font-serif text-white">
+              Access Restricted
+            </h2>
+            <Link href="/login" className="block">
+              <Button className="w-full h-12 bg-luxury-gold hover:bg-white text-black font-black uppercase tracking-widest transition-all">
+                Identify Yourself
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!propertyData) {
     return (
-      <div className="p-6 rounded-3xl bg-red-50 border border-red-200">
-        <h2 className="text-xl font-bold text-red-800 mb-2">
-          Property Not Found
-        </h2>
-        <p className="text-red-600">
-          The property you&apos;re trying to edit doesn&apos;t exist.
-        </p>
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-10">
+        <Card className="max-w-md w-full rounded-[2rem] border-white/5 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <CardContent className="p-12 text-center space-y-6">
+            <Home className="w-12 h-12 text-luxury-gold mx-auto" />
+            <h2 className="text-2xl font-serif text-white">
+              Property Not Found
+            </h2>
+            <p className="text-white/40">The property you&apos;re trying to edit doesn&apos;t exist.</p>
+            <Link href="/seller-dashboard/my-properties" className="block">
+              <Button className="w-full h-12 bg-luxury-gold hover:bg-white text-black font-black uppercase tracking-widest transition-all">
+                Return to Properties
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/seller-dashboard/my-properties">
-          <Button variant="outline" size="sm" className="rounded-xl">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Properties
-          </Button>
-        </Link>
-        <div>
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-3xl lg:text-4xl font-heading font-bold text-foreground"
-          >
-            Edit Property
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-muted-foreground mt-2 text-lg"
-          >
-            Update your property details and information.
-          </motion.p>
+    <div className="min-h-screen bg-[#0E0E0E] text-white font-sans selection:bg-luxury-gold selection:text-black pb-20">
+      {/* Top Navigation / Breadcrumb style header */}
+      <header className="px-10 py-12 flex justify-between items-start">
+        <div className="space-y-2">
+          <div className="flex items-center gap-4">
+            <Link href="/seller-dashboard/my-properties">
+              <Button variant="ghost" className="text-white/60 hover:text-white p-2">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <h1 className="text-5xl font-serif text-white tracking-tight leading-none">
+              Refine Property
+            </h1>
+          </div>
+          <p className="text-white/40 text-sm font-medium italic ml-9">
+            Elevating architectural legacy to new heights.
+          </p>
         </div>
-      </div>
+        <div className="flex items-center gap-6">
+          <button className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors relative">
+            <Bell className="w-5 h-5 text-white/60" />
+            <div className="absolute top-3 right-3 w-2 h-2 bg-luxury-gold rounded-full border-2 border-[#0E0E0E]" />
+          </button>
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-white/10 to-transparent p-px">
+            <div className="w-full h-full rounded-xl bg-[#1A1A1A] flex items-center justify-center overflow-hidden border border-white/5">
+              <User className="text-luxury-gold w-6 h-6" />
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Basic Information */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="rounded-3xl border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Home className="w-5 h-5 mr-2 text-luxury-emerald" />
-                    Basic Information
-                  </CardTitle>
-                  <CardDescription>
-                    Update essential details about your property.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="title">Property Title *</Label>
-                      <Input
-                        id="title"
-                        placeholder="e.g., Luxury Villa with Ocean View"
-                        value={formData.title}
-                        onChange={(e) =>
-                          handleInputChange("title", e.target.value)
-                        }
-                        className="mt-2 rounded-xl"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="type">Property Type *</Label>
-                      <Select
-                        value={formData.type}
-                        onValueChange={(value) =>
-                          handleInputChange("type", value || "")
-                        }
-                      >
-                        <SelectTrigger className="mt-2 rounded-xl">
-                          <SelectValue placeholder="Select property type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Villa">Villa</SelectItem>
-                          <SelectItem value="Apartment">Apartment</SelectItem>
-                          <SelectItem value="Penthouse">Penthouse</SelectItem>
-                          <SelectItem value="Mansion">Mansion</SelectItem>
-                          <SelectItem value="Condo">Condo</SelectItem>
-                          <SelectItem value="Townhouse">Townhouse</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+      <form
+        onSubmit={handleSubmit}
+        className="px-10 grid grid-cols-1 lg:grid-cols-12 gap-16"
+      >
+        {/* Left Form Content */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* I. CORE IDENTITY */}
+          <SectionHeader numeral="I" title="CORE IDENTITY" />
 
-                  <div>
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Describe your property's features, location benefits, and unique selling points..."
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange("description", e.target.value)
-                      }
-                      className="mt-2 min-h-32 rounded-xl resize-none"
-                    />
-                  </div>
+          <div className="space-y-8">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 ml-1">
+                Estate Name
+              </Label>
+              <Input
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                className="h-20 bg-[#1A1A1A] border-white/5 text-white text-2xl font-serif px-8 placeholder:text-white/10 rounded-sm focus-visible:ring-luxury-gold focus-visible:ring-offset-0 transition-all"
+                placeholder="The Obsidian Manor"
+              />
+            </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label htmlFor="price">Price ($) *</Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="price"
-                          type="number"
-                          placeholder="500000"
-                          value={formData.price || ""}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "price",
-                              parseFloat(e.target.value) || 0,
-                            )
-                          }
-                          className="mt-2 pl-10 rounded-xl"
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Location *</Label>
-                      <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="location"
-                          placeholder="Miami Beach, FL"
-                          value={formData.location}
-                          onChange={(e) =>
-                            handleInputChange("location", e.target.value)
-                          }
-                          className="mt-2 pl-10 rounded-xl"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 ml-1">
+                Classification
+              </Label>
+              <Select
+                value={formData.type}
+                onValueChange={(v) => handleInputChange("type", v ?? "")}
+              >
+                <SelectTrigger className="h-16 bg-[#1A1A1A] border-white/5 text-white font-medium px-8 rounded-sm focus:ring-luxury-gold">
+                  <SelectValue placeholder="Architectural Landmark" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1A1A] border-white/10 text-white">
+                  <SelectItem value="Villa">Villa</SelectItem>
+                  <SelectItem value="Mansion">Mansion</SelectItem>
+                  <SelectItem value="Penthouse">Penthouse</SelectItem>
+                  <SelectItem value="Apartment">Apartment</SelectItem>
+                  <SelectItem value="Chateau">
+                    Architectural Landmark
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Property Details */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="rounded-3xl border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Building className="w-5 h-5 mr-2 text-luxury-emerald" />
-                    Property Details
-                  </CardTitle>
-                  <CardDescription>
-                    Update physical characteristics of your property.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <Label htmlFor="bedrooms">Bedrooms</Label>
-                      <div className="relative">
-                        <BedDouble className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="bedrooms"
-                          type="number"
-                          min="0"
-                          value={formData.bedrooms}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "bedrooms",
-                              parseInt(e.target.value) || 0,
-                            )
-                          }
-                          className="mt-2 pl-10 rounded-xl"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="bathrooms">Bathrooms</Label>
-                      <div className="relative">
-                        <Bath className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="bathrooms"
-                          type="number"
-                          min="0"
-                          value={formData.bathrooms}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "bathrooms",
-                              parseInt(e.target.value) || 0,
-                            )
-                          }
-                          className="mt-2 pl-10 rounded-xl"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="area">Area (sqft)</Label>
-                      <div className="relative">
-                        <Square className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="area"
-                          type="number"
-                          min="0"
-                          value={formData.area || ""}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "area",
-                              parseFloat(e.target.value) || 0,
-                            )
-                          }
-                          className="mt-2 pl-10 rounded-xl"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 ml-1">
+                The Narrative
+              </Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
+                className="min-h-45 bg-[#161616] border-white/5 p-8 text-white font-medium leading-relaxed rounded-sm focus-visible:ring-luxury-gold placeholder:text-white/10"
+                placeholder="Craft the story of this residence..."
+              />
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-8">
-            {/* Images */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className="rounded-3xl border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Upload className="w-5 h-5 mr-2 text-luxury-emerald" />
-                    Property Images
-                  </CardTitle>
-                  <CardDescription>
-                    Update photos of your property.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="border-2 border-dashed border-border rounded-xl p-6 text-center">
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Click to upload or drag and drop
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      PNG, JPG, GIF up to 10MB each
-                    </p>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="mt-4 rounded-xl"
-                      onClick={() =>
-                        document.getElementById("image-upload")?.click()
-                      }
-                    >
-                      Add Images
-                    </Button>
-                  </div>
+          {/* II. MARKET PLACEMENT */}
+          <SectionHeader numeral="II" title="MARKET PLACEMENT" />
 
-                  {imagePreviews.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">
-                        Images ({imagePreviews.length})
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {imagePreviews.map((preview: string, index: number) => (
-                          <div key={index} className="relative group">
-                            <div className="aspect-4/3 rounded-lg overflow-hidden">
-                              <Image
-                                width={200}
-                                height={150}
-                                src={preview}
-                                alt={`Property image ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => removeImage(index)}
-                              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 ml-1">
+                Market Valuation
+              </Label>
+              <div className="relative group">
+                <span className="absolute left-8 top-1/2 -translate-y-1/2 text-luxury-gold font-serif text-xl">
+                  $
+                </span>
+                <Input
+                  type="number"
+                  value={formData.price || ""}
+                  onChange={(e) =>
+                    handleInputChange("price", parseFloat(e.target.value) || 0)
+                  }
+                  className="h-16 bg-[#1A1A1A] border-white/5 text-white text-xl font-bold pl-14 pr-8 rounded-sm focus-visible:ring-luxury-gold"
+                  placeholder="00,000,000"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 ml-1">
+                Geographic Placement
+              </Label>
+              <div className="relative group">
+                <Input
+                  value={formData.location}
+                  onChange={(e) =>
+                    handleInputChange("location", e.target.value)
+                  }
+                  className="h-16 bg-[#1A1A1A] border-white/5 text-white text-lg font-medium px-8 pr-14 rounded-sm focus-visible:ring-luxury-gold"
+                  placeholder="Bel Air, California"
+                />
+                <MapPin className="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-luxury-gold opacity-50" />
+              </div>
+            </div>
+          </div>
 
-            {/* Submit Button */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-            >
-              <Card className="rounded-3xl border-border shadow-sm">
-                <CardContent className="p-6">
-                  <Button
-                    type="submit"
-                    disabled={updateLoading}
-                    className="w-full bg-luxury-emerald hover:bg-luxury-emerald-light text-white rounded-xl h-12 font-bold"
-                  >
-                    {updateLoading ? "Updating..." : "Update Property"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    By updating, you agree to our terms and conditions.
+          {/* III. SPECIFICATIONS */}
+          <SectionHeader numeral="III" title="SPECIFICATIONS" />
+
+          <div className="grid grid-cols-3 gap-6">
+            {[
+              { id: "bedrooms", label: "SUITES" },
+              { id: "bathrooms", label: "BATHS" },
+              { id: "area", label: "SQ. FT." },
+            ].map((spec) => (
+              <div key={spec.id} className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 ml-1">
+                  {spec.label}
+                </Label>
+                <div className="h-16 bg-[#1A1A1A] border border-white/5 flex items-center justify-center rounded-sm">
+                  <input
+                    type="number"
+                    value={
+                      (formData[spec.id as keyof PropertyFormData] as number) ||
+                      0
+                    }
+                    onChange={(e) =>
+                      handleInputChange(
+                        spec.id as keyof PropertyFormData,
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
+                    className="w-full text-center bg-transparent border-none focus:outline-none text-white text-2xl font-serif"
+                    placeholder="00"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: Visuals & Submit */}
+        <div className="lg:col-span-5 space-y-4">
+          <SectionHeader numeral="IV" title="VISUAL PORTFOLIO" />
+
+          <div className="bg-[#1A1A1A]/50 border border-white/5 rounded-sm p-10 min-h-112.5 flex flex-col items-center justify-center space-y-8 relative">
+            <div className="absolute inset-0 border-2 border-dashed border-white/5 rounded-sm m-4 pointer-events-none" />
+
+            <ImageUpload
+              value={formData.images}
+              onChange={handleImagesChange}
+              maxFiles={10}
+              aspectRatio="aspect-square"
+              className="w-full"
+            />
+
+            {!formData.images.length && (
+              <div className="text-center space-y-4 z-10 pointer-events-none absolute md:relative">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl mx-auto flex items-center justify-center">
+                  <Zap className="w-8 h-8 text-luxury-gold" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-serif text-white/90 leading-tight">
+                    Deploy High-Res Assets
+                  </h3>
+                  <p className="text-[10px] text-white/30 font-medium uppercase tracking-widest max-w-50 mx-auto leading-loose">
+                    Support for 8K stills and architectural walkthroughs.
+                    Maximum 10 items.
                   </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-12 space-y-6">
+            <Button
+              type="submit"
+              disabled={updateLoading}
+              className="group w-full h-24 bg-luxury-gold hover:bg-white text-black text-3xl font-serif shadow-2xl transition-all duration-500 rounded-sm overflow-hidden relative"
+            >
+              {updateLoading ? (
+                <Loader2 className="animate-spin w-10 h-10" />
+              ) : (
+                <div className="flex items-center gap-4">
+                  Refine Listing{" "}
+                  <ChevronRight className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
+                </div>
+              )}
+            </Button>
+
+            <p className="text-center text-[9px] font-black uppercase tracking-[0.2em] text-white/20 px-8">
+              SUBJECT TO EDITORIAL REVIEW & TIER VERIFICATION
+            </p>
           </div>
         </div>
       </form>

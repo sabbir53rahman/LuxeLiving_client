@@ -6,9 +6,9 @@ import {
   Building, 
   Calendar, 
   Users, 
-  Star,
+  // Star,
   DollarSign,
-  Handshake
+  // Handshake
 } from "lucide-react";
 
 const agentLinks = [
@@ -16,9 +16,9 @@ const agentLinks = [
   { name: "Profile", href: "/agent-dashboard/profile", icon: Users },
   { name: "Properties", href: "/agent-dashboard/properties", icon: Building },
   { name: "Viewings", href: "/agent-dashboard/viewings", icon: Calendar },
-  { name: "Reviews", href: "/agent-dashboard/reviews", icon: Star },
+  // { name: "Reviews", href: "/agent-dashboard/reviews", icon: Star },
   { name: "Earnings", href: "/agent-dashboard/earnings", icon: DollarSign },
-  { name: "Collaborations", href: "/agent-dashboard/collaborations", icon: Handshake },
+  // { name: "Collaborations", href: "/agent-dashboard/collaborations", icon: Handshake },
 ];
 
 export default function AgentDashboardLayout({

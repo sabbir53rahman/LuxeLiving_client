@@ -48,7 +48,9 @@ export const agentApi = baseApi.injectEndpoints({
     // Agent Reviews Endpoints
     getAgentReviews: builder.query({
       query: (agentId) => `/agents/${agentId}/reviews`,
-      providesTags: (result, error, agentId) => [{ type: "Review", id: agentId }],
+      providesTags: (result, error, agentId) => [
+        { type: "Review", id: agentId },
+      ],
     }),
     createAgentReview: builder.mutation({
       query: ({ agentId, data }) => ({
@@ -56,7 +58,10 @@ export const agentApi = baseApi.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: (result, error, { agentId }) => [{ type: "Review", id: agentId }, "Agent"],
+      invalidatesTags: (result, error, { agentId }) => [
+        { type: "Review", id: agentId },
+        "Agent",
+      ],
     }),
     // Agent Viewings Endpoints
     getAgentViewings: builder.query({
@@ -72,7 +77,9 @@ export const agentApi = baseApi.injectEndpoints({
         method: "PATCH",
         body: { status },
       }),
-      invalidatesTags: (result, error, { viewingId }) => [{ type: "Viewing", id: viewingId }],
+      invalidatesTags: (result, error, { viewingId }) => [
+        { type: "Viewing", id: viewingId },
+      ],
     }),
     getAssignedSellerProperties: builder.query({
       query: (params) => ({
@@ -94,9 +101,27 @@ export const agentApi = baseApi.injectEndpoints({
         url: `/agents/${agentId}/request`,
         method: "POST",
       }),
-      invalidatesTags: (result, error, agentId) => [{ type: "Agent", id: agentId }],
+      invalidatesTags: (result, error, agentId) => [
+        { type: "Agent", id: agentId },
+      ],
     }),
-        // Note: createAgent doesn't exist here, you use useRegisterAgentMutation in authApi!
+    // Add these to your endpoints
+    getAgentEarnings: builder.query({
+      query: (params) => ({
+        url: "/agents/earnings",
+        params,
+      }),
+      providesTags: ["Agent"],
+    }),
+
+    getAgentAnalytics: builder.query({
+      query: (params) => ({
+        url: "/agents/analytics",
+        params,
+      }),
+      providesTags: ["Agent"],
+    }),
+    // Note: createAgent doesn't exist here, you use useRegisterAgentMutation in authApi!
     // Note: verifyAgent and Top Agents are not implemented on the server
   }),
 });
@@ -115,4 +140,6 @@ export const {
   useUpdateAgentViewingStatusMutation,
   useGetAssignedSellerPropertiesQuery,
   useRequestAgentMutation,
+  useGetAgentEarningsQuery,
+  useGetAgentAnalyticsQuery,
 } = agentApi;

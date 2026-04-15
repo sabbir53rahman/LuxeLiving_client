@@ -5,7 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { AgentCard } from "@/components/agent/AgentCard";
 import { useGetAgentsQuery } from "@/redux/api/agentApi";
-import { Loader2, Search, Award, Filter, Star, MapPin } from "lucide-react";
+import { Loader2, Search, Award, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -213,7 +213,7 @@ export default function AgentsPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {agents.map((agent: Agent, index: number) => (
-                <AgentCard key={agent._id} agent={agent} index={index} />
+                <AgentCard key={agent.id} agent={agent} index={index} />
               ))}
             </div>
 

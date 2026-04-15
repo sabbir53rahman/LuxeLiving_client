@@ -15,15 +15,12 @@ import {
   EyeOff,
   Home,
   Building,
-  Briefcase,
-  Phone,
-  MapPin
+  Briefcase
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { 
   useRegisterAgentMutation, 
   useRegisterBuyerMutation, 
@@ -44,13 +41,7 @@ const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  role: z.enum(["buyer", "seller", "agent"]),
-  contactNumber: z.string().min(10, "Contact number must be at least 10 digits"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
-  licenseNumber: z.string().optional(),
-  experience: z.number().min(0).optional(),
-  specialization: z.string().optional(),
-  bio: z.string().optional(),
+  role: z.enum(["agent", "buyer", "seller"]),
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -60,12 +51,11 @@ interface RegisterPayload {
   email: string;
   password: string;
   role: string;
-  contactNumber: string;
-  address: string;
+  contactNumber?: string;
+  address?: string;
   licenseNumber?: string;
   experience?: number;
   specialization?: string;
-  bio?: string;
 }
 
 export default function RegisterForm() {
@@ -84,7 +74,6 @@ export default function RegisterForm() {
     register,
     handleSubmit,
     control,
-    watch,
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -93,16 +82,8 @@ export default function RegisterForm() {
       email: "",
       password: "",
       role: "buyer",
-      contactNumber: "",
-      address: "",
-      licenseNumber: "",
-      experience: 0,
-      specialization: "",
-      bio: "",
     },
   });
-
-  const selectedRole = watch("role");
 
   const onSubmit: SubmitHandler<RegisterFormValues> = async (data) => {
     try {
@@ -112,48 +93,52 @@ export default function RegisterForm() {
         email: data.email,
         password: data.password,
         role: data.role,
-        contactNumber: data.contactNumber,
-        address: data.address,
       };
 
+      // Call the appropriate registration API based on role
       if (data.role === 'agent') {
-        payload.licenseNumber = data.licenseNumber;
-        payload.experience = data.experience;
-        payload.specialization = data.specialization;
-        payload.bio = data.bio;
-      }
-
-      if (data.role === "agent") {
         result = await registerAgent(payload).unwrap();
-      } else if (data.role === "buyer") {
-        result = await registerBuyer(payload).unwrap();
-      } else if (data.role === "seller") {
+      } else if (data.role === 'seller') {
         result = await registerSeller(payload).unwrap();
+      } else {
+        result = await registerBuyer(payload).unwrap();
       }
 
-      if (result) {
-        const token: string = result.data?.token || result.token;
+      // Support both { data: { accessToken } } and flat { token } shapes
+      const token: string =
+        result?.data?.accessToken ||
+        result?.data?.token ||
+        result?.accessToken ||
+        result?.token;
 
-        if (token) {
-          setCookieToken(token);
-          const decoded = jwtDecode<DecodedToken>(token);
-          const user: User = {
-            id: decoded.id,
-            email: decoded.email,
-            role: decoded.role,
-            name: decoded.name || data.name || data.email,
-            createdAt: new Date().toISOString(),
-          };
-
-          dispatch(setCredentials({ user, token }));
-        }
-
-        toast.success("Registration successful! Welcome to LuxeLiving.");
-
-        if (data.role === "agent") router.push("/agent-dashboard");
-        else if (data.role === "buyer") router.push("/buyer-dashboard");
-        else if (data.role === "seller") router.push("/seller-dashboard");
+      if (!token) {
+        toast.error("Registration failed. No token received from server.");
+        return;
       }
+
+      // Save token to cookie so middleware can read it
+      setCookieToken(token);
+
+      // Decode token to get user info
+      const decoded = jwtDecode<DecodedToken>(token);
+      const user: User = {
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role,
+        name: decoded.name || data.name,
+        createdAt: new Date().toISOString(),
+      };
+
+      dispatch(setCredentials({ user, token }));
+
+      toast.success("Registration successful! Welcome to LuxeLiving.");
+
+      // Redirect based on role
+      const role = decoded.role.toLowerCase();
+      if (role === "agent") router.push("/agent-dashboard");
+      else if (role === "seller") router.push("/seller-dashboard");
+      else if (role === "buyer") router.push("/buyer-dashboard");
+      else router.push("/");
     } catch (error: unknown) {
       const err = error as { data?: { message?: string }; message?: string };
       toast.error(
@@ -163,21 +148,43 @@ export default function RegisterForm() {
   };
 
   return (
-    <div className="space-y-8 py-8 px-4 sm:px-0">
-      <div className="space-y-2 text-left">
-        <h1 className="text-4xl font-heading font-black tracking-tight text-luxury-slate">
+    <div className="space-y-8">
+      {/* Desktop Branding - Hidden on Mobile */}
+      <div className="hidden lg:block text-center mb-8">
+        <div className="inline-flex items-center justify-center mb-6">
+          <div className="w-16 h-16 bg-linear-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-500/30">
+            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center">
+              <div className="w-4 h-4 bg-yellow-400 rounded-full" />
+            </div>
+          </div>
+        </div>
+        <h2 className="text-2xl font-bold text-yellow-400 uppercase tracking-wider mb-2">
+          THE CURATOR EXPERIENCE
+        </h2>
+        <h1 className="text-4xl font-bold text-white mb-2">
           Join LuxeLiving
         </h1>
-        <p className="text-luxury-slate/60 text-lg font-medium">
-          Create an account to start your luxury real estate journey.
+        <p className="text-blue-200 text-sm">
+          Create an account to start your luxury real estate journey
+        </p>
+      </div>
+
+      {/* Mobile Header */}
+      <div className="lg:hidden text-center mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">
+          Join LuxeLiving
+        </h1>
+        <p className="text-blue-200 text-sm">
+          Start your luxury real estate journey
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {/* Role Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-bold uppercase tracking-wider text-luxury-slate/70">
-            I want to join as...
-          </Label>
+          <label className="text-xs font-bold uppercase tracking-wider text-yellow-400/80">
+            I WANT TO JOIN AS...
+          </label>
           <Controller
             name="role"
             control={control}
@@ -186,57 +193,57 @@ export default function RegisterForm() {
                 <button
                   type="button"
                   onClick={() => field.onChange("buyer")}
-                  className={`relative group p-3 rounded-2xl border-2 text-center transition-all duration-300 ${
+                  className={`relative group p-4 rounded-xl border-2 text-center transition-all duration-300 ${
                     field.value === "buyer"
-                      ? "border-luxury-gold bg-luxury-gold/5 shadow-md shadow-luxury-gold/20"
-                      : "border-luxury-slate/10 bg-white hover:border-luxury-gold/40"
+                      ? "border-yellow-400 bg-yellow-400/10 shadow-lg shadow-yellow-400/20"
+                      : "border-white/20 bg-white/5 hover:border-yellow-400/40"
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                      field.value === "buyer" ? "bg-luxury-gold text-white" : "bg-luxury-slate/5 text-luxury-slate/50"
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                      field.value === "buyer" ? "bg-yellow-400 text-blue-900" : "bg-white/10 text-yellow-400/60"
                     }`}>
                       <Home className="h-5 w-5" />
                     </div>
-                    <div className="font-bold text-xs uppercase tracking-tight text-luxury-slate">Buyer</div>
+                    <div className="font-bold text-xs uppercase tracking-tight text-white">Buyer</div>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => field.onChange("seller")}
-                  className={`relative group p-3 rounded-2xl border-2 text-center transition-all duration-300 ${
+                  className={`relative group p-4 rounded-xl border-2 text-center transition-all duration-300 ${
                     field.value === "seller"
-                      ? "border-luxury-emerald bg-luxury-emerald/5 shadow-md shadow-luxury-emerald/20"
-                      : "border-luxury-slate/10 bg-white hover:border-luxury-emerald/40"
+                      ? "border-yellow-400 bg-yellow-400/10 shadow-lg shadow-yellow-400/20"
+                      : "border-white/20 bg-white/5 hover:border-yellow-400/40"
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                      field.value === "seller" ? "bg-luxury-emerald text-white" : "bg-luxury-slate/5 text-luxury-slate/50"
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                      field.value === "seller" ? "bg-yellow-400 text-blue-900" : "bg-white/10 text-yellow-400/60"
                     }`}>
                       <Building className="h-5 w-5" />
                     </div>
-                    <div className="font-bold text-xs uppercase tracking-tight text-luxury-slate">Seller</div>
+                    <div className="font-bold text-xs uppercase tracking-tight text-white">Seller</div>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => field.onChange("agent")}
-                  className={`relative group p-3 rounded-2xl border-2 text-center transition-all duration-300 ${
+                  className={`relative group p-4 rounded-xl border-2 text-center transition-all duration-300 ${
                     field.value === "agent"
-                      ? "border-luxury-slate bg-luxury-slate/5 shadow-md shadow-luxury-slate/20"
-                      : "border-luxury-slate/10 bg-white hover:border-luxury-slate/40"
+                      ? "border-yellow-400 bg-yellow-400/10 shadow-lg shadow-yellow-400/20"
+                      : "border-white/20 bg-white/5 hover:border-yellow-400/40"
                   }`}
                 >
                   <div className="flex flex-col items-center gap-2">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
-                      field.value === "agent" ? "bg-luxury-slate text-white" : "bg-luxury-slate/5 text-luxury-slate/50"
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                      field.value === "agent" ? "bg-yellow-400 text-blue-900" : "bg-white/10 text-yellow-400/60"
                     }`}>
                       <Briefcase className="h-5 w-5" />
                     </div>
-                    <div className="font-bold text-xs uppercase tracking-tight text-luxury-slate">Agent</div>
+                    <div className="font-bold text-xs uppercase tracking-tight text-white">Agent</div>
                   </div>
                 </button>
               </div>
@@ -244,98 +251,97 @@ export default function RegisterForm() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2 col-span-1 md:col-span-2">
-            <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Full Name</Label>
-            <div className="relative">
-              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-luxury-slate/40" />
-              <Input {...register("name")} placeholder="John Doe" className="pl-12 h-12 rounded-xl bg-white/50 border-luxury-slate/20" />
-            </div>
-            {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
-          </div>
-
+        {/* Form Fields */}
+        <div className="space-y-4">
+          {/* Full Name */}
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Email Address</Label>
+            <label className="text-xs font-bold uppercase tracking-wider text-yellow-400/80">
+              FULL NAME
+            </label>
             <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-luxury-slate/40" />
-              <Input {...register("email")} type="email" placeholder="john@example.com" className="pl-12 h-12 rounded-xl bg-white/50 border-luxury-slate/20" />
+              <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-400/60" />
+              <Input 
+                {...register("name")} 
+                placeholder="Enter your full name" 
+                className="pl-12 h-12 bg-white/10 border-white/20 text-white placeholder-white/40 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 backdrop-blur-sm" 
+              />
             </div>
-            {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email.message}</p>}
+            {errors.name && <p className="text-xs text-red-400 mt-1">{errors.name.message}</p>}
           </div>
 
+          {/* Email */}
           <div className="space-y-2">
-            <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Contact Number</Label>
+            <label className="text-xs font-bold uppercase tracking-wider text-yellow-400/80">
+              EMAIL ADDRESS
+            </label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-luxury-slate/40" />
-              <Input {...register("contactNumber")} placeholder="Optional but recommended" className="pl-12 h-12 rounded-xl bg-white/50 border-luxury-slate/20" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-400/60" />
+              <Input 
+                {...register("email")} 
+                type="email" 
+                placeholder="Enter your email" 
+                className="pl-12 h-12 bg-white/10 border-white/20 text-white placeholder-white/40 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 backdrop-blur-sm" 
+              />
             </div>
-            {errors.contactNumber && <p className="text-xs text-red-500 mt-1">{errors.contactNumber.message}</p>}
+            {errors.email && <p className="text-xs text-red-400 mt-1">{errors.email.message}</p>}
           </div>
 
-          <div className="space-y-2 col-span-1 md:col-span-2">
-            <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Address</Label>
+          {/* Password */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold uppercase tracking-wider text-yellow-400/80">
+              PASSWORD
+            </label>
             <div className="relative">
-              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-luxury-slate/40" />
-              <Input {...register("address")} placeholder="123 Luxury Ln, Miami, FL" className="pl-12 h-12 rounded-xl bg-white/50 border-luxury-slate/20" />
-            </div>
-            {errors.address && <p className="text-xs text-red-500 mt-1">{errors.address.message}</p>}
-          </div>
-
-          {selectedRole === 'agent' && (
-            <>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">License Number</Label>
-                <Input {...register("licenseNumber")} placeholder="RE-123456" className="h-12 rounded-xl bg-white border-luxury-slate/20" />
-                {errors.licenseNumber && <p className="text-xs text-red-500 mt-1">{errors.licenseNumber.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Experience (Years)</Label>
-                <Input {...register("experience", { valueAsNumber: true })} type="number" placeholder="5" className="h-12 rounded-xl bg-white border-luxury-slate/20" />
-              </div>
-              <div className="space-y-2 col-span-1 md:col-span-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Specialization</Label>
-                <Input {...register("specialization")} placeholder="e.g. Luxury Villas" className="h-12 rounded-xl bg-white border-luxury-slate/20" />
-              </div>
-            </>
-          )}
-
-          <div className="space-y-2 col-span-1 md:col-span-2">
-            <Label className="text-xs font-bold uppercase tracking-widest text-luxury-slate/70">Password</Label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-luxury-slate/40" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-400/60" />
               <Input
                 {...register("password")}
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="pl-12 pr-12 h-12 rounded-xl bg-white/50 border-luxury-slate/20"
+                placeholder="Create a password"
+                className="pl-12 pr-12 h-12 bg-white/10 border-white/20 text-white placeholder-white/40 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 backdrop-blur-sm"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-luxury-slate/40"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-yellow-400/60 hover:text-yellow-400 transition-colors"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
-            {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
+            {errors.password && <p className="text-xs text-red-400 mt-1">{errors.password.message}</p>}
           </div>
         </div>
 
+        {/* Submit Button */}
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full h-14 rounded-2xl bg-luxury-slate text-white text-lg font-bold shadow-xl hover:bg-black transition-all"
+          className="w-full h-12 bg-linear-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-blue-900 font-bold rounded-xl shadow-lg shadow-yellow-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/40 disabled:opacity-70"
         >
-          {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create Account"}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Creating Account...
+            </>
+          ) : (
+            "CREATE ACCOUNT"
+          )}
         </Button>
       </form>
 
-      <p className="text-center text-luxury-slate/70 font-medium">
-        Already have an account?{" "}
-        <Link href="/login" className="text-luxury-gold font-black hover:underline underline-offset-4">
-          Sign in
-        </Link>
-      </p>
+      {/* Footer Links */}
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center">
+          <Link
+            href="/login"
+            className="text-sm text-yellow-400 hover:text-yellow-300 transition-colors font-medium"
+          >
+            Already have an account?
+          </Link>
+        </div>
+        <p className="text-xs text-blue-300/60">
+          By creating an account, you agree to our Terms of Service and Privacy Policy
+        </p>
+      </div>
     </div>
   );
 }

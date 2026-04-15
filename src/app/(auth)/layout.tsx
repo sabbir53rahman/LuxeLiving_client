@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { GraduationCap, ArrowLeft } from "lucide-react";
+import { Home, ArrowLeft } from "lucide-react";
 // import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Button } from "@/components/ui/button";
 
@@ -10,53 +10,60 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
+    <div className="min-h-screen flex flex-col md:flex-row bg-black">
       {/* Decorative Side - Hidden on Mobile */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900 group">
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <Image
-          src="/images/auth-side-panel.png"
-          alt="Auth background"
+          src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2000"
+          alt="Luxury real estate background"
           fill
-          className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-[10s]"
+          className="object-cover opacity-30"
           priority
         />
 
-        {/* Abstract Overlays */}
-        <div className="absolute inset-0 bg-linear-to-t from-slate-950 via-slate-950/20 to-transparent" />
+        {/* Medium Black Overlay - Balanced glossy effect */}
+        <div className="absolute inset-0 bg-linear-to-br from-black/40 via-black/50 to-black/60" />
+        
+        {/* Secondary Black Overlay for depth */}
+        <div className="absolute inset-0 bg-linear-to-t from-black/30 via-transparent to-black/20" />
+        
+        {/* Gold Accent Overlay - Subtle luxury touch */}
+        <div className="absolute inset-0 bg-linear-to-t from-yellow-400/3 via-transparent to-transparent" />
+
+        {/* LuxeLiving Branding */}
         <div className="absolute top-12 left-12 z-20">
           <Link
             href="/"
-            className="flex items-center gap-2 font-bold text-2xl text-white"
+            className="flex items-center gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-2xl shadow-primary/40">
-              <GraduationCap className="h-6 w-6 text-primary-foreground" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-yellow-400 to-yellow-600 shadow-lg shadow-yellow-500/30">
+              <div className="h-6 w-6 bg-blue-900 rounded-lg flex items-center justify-center">
+                <Home className="h-4 w-4 text-yellow-400" />
+              </div>
             </div>
-            <span className="font-heading tracking-tight">Guidely</span>
+            <span className="font-bold text-2xl text-white tracking-tight">LuxeLiving</span>
           </Link>
         </div>
 
         <div className="absolute bottom-20 left-12 right-12 z-20">
           <div className="p-8 rounded-[2.5rem] bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl">
-            <h2 className="text-4xl font-heading font-black text-white mb-6 leading-tight tracking-tight">
-              Empower your future with <br />
-              <span className="text-secondary italic">expert guidance.</span>
+            <h2 className="text-5xl font-black text-white mb-4 leading-tight tracking-tight">
+              THE CURATOR
+              <br />
+              <span className="text-yellow-400 font-bold">EXPERIENCE</span>
             </h2>
-            <p className="text-slate-300 text-lg leading-relaxed max-w-md font-medium">
-              Join a global network of professionals and students collaborating
-              to reach new heights in career and skill development.
+            <p className="text-blue-200 text-lg leading-relaxed max-w-md font-medium mb-6">
+              Discover exclusive properties and connect with premier real estate professionals in your journey to find the perfect luxury home.
             </p>
-            <div className="mt-8 flex items-center gap-4">
-              <div className="flex -space-x-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="h-10 w-10 rounded-full border-2 border-slate-900 bg-slate-800"
-                  />
-                ))}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 bg-yellow-400 rounded-full" />
+                <span className="text-blue-300 text-sm font-semibold">Premium Properties</span>
               </div>
-              <span className="text-slate-400 text-sm font-semibold">
-                Join 10k+ active users
-              </span>
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 bg-yellow-400 rounded-full" />
+                <span className="text-blue-300 text-sm font-semibold">Expert Agents</span>
+              </div>
             </div>
           </div>
         </div>
@@ -70,7 +77,7 @@ export default function AuthLayout({
             <Button
               variant="ghost"
               size="sm"
-              className="gap-2 rounded-full px-4"
+              className="gap-2 rounded-full px-4 text-white hover:text-yellow-400 hover:bg-white/10"
             >
               <ArrowLeft className="h-4 w-4" />
               Back to home
@@ -84,12 +91,14 @@ export default function AuthLayout({
             <div className="lg:hidden flex justify-center mb-12">
               <Link
                 href="/"
-                className="flex items-center gap-2 font-bold text-2xl"
+                className="flex items-center gap-3"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg">
-                  <GraduationCap className="h-6 w-6 text-primary-foreground" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-yellow-400 to-yellow-600 shadow-lg shadow-yellow-500/30">
+                  <div className="h-6 w-6 bg-blue-900 rounded-lg flex items-center justify-center">
+                    <Home className="h-4 w-4 text-yellow-400" />
+                  </div>
                 </div>
-                <span className="font-heading tracking-tight">Guidely</span>
+                <span className="font-bold text-2xl text-white tracking-tight">LuxeLiving</span>
               </Link>
             </div>
             {children}
@@ -97,8 +106,8 @@ export default function AuthLayout({
         </div>
 
         {/* Footer info for mobile/auth */}
-        <div className="p-8 text-center text-sm text-muted-foreground font-medium lg:hidden">
-          © {new Date().getFullYear()} Guidely. Built for creators.
+        <div className="p-8 text-center text-sm text-blue-300/60 font-medium lg:hidden">
+          © {new Date().getFullYear()} LuxeLiving. Luxury Real Estate Platform.
         </div>
       </div>
     </div>

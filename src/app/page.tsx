@@ -2,18 +2,13 @@ import type { Metadata } from "next";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Hero } from "@/components/landing/Hero";
-
-import { Features } from "@/components/landing/Features";
-
-import { Testimonials } from "@/components/landing/Testimonials";
-
-import { FAQ } from "@/components/landing/FAQ";
-import { FinalCTA } from "@/components/landing/FinalCTA";
 import { FeaturedProperties } from "@/components/landing/FeaturedProperties";
-import { PropertyCategories } from "@/components/landing/PropertyCategories";
 import { Statistics } from "@/components/landing/Statistics";
-import { MeetAgents } from "@/components/landing/MeetAgents";
-import { HowItWorks } from "@/components/landing/HowItWorks";
+import { Collections } from "@/components/landing/Collections";
+import { FAQ } from "@/components/landing/FAQ";
+import { UnrivaledExcellence } from "@/components/landing/UnrivaledExcellence";
+import { MeetCurators } from "@/components/landing/MeetCurators";
+import { ClientTestimonials } from "@/components/landing/ClientTestimonials";
 
 export const metadata: Metadata = {
   title: "LuxeLiving — Premium Real Estate",
@@ -23,19 +18,17 @@ export const metadata: Metadata = {
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background transition-colors duration-300">
+    <div className="flex min-h-screen flex-col bg-[#0A0A0A] text-white font-sans selection:bg-luxury-gold selection:text-black">
       <Navbar />
       <main className="flex-1">
         <Hero />
         <FeaturedProperties />
-        <Features />
         <Statistics />
-        <PropertyCategories />
-        <HowItWorks />
-        <MeetAgents />
-        <Testimonials />
+        <UnrivaledExcellence />
+        <Collections />
+        <MeetCurators />
+        <ClientTestimonials />
         <FAQ />
-        <FinalCTA />
       </main>
       <Footer />
     </div>

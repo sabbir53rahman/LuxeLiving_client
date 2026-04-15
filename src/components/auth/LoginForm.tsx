@@ -12,7 +12,6 @@ import { jwtDecode } from "jwt-decode";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useLoginMutation } from "@/redux/api/authApi";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { setCredentials } from "@/redux/features/auth/authSlice";
@@ -98,89 +97,122 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="space-y-10">
-      <div className="space-y-4">
-        <h1 className="text-4xl font-heading font-black tracking-tight text-foreground">
-          Welcome back
+    <div className="space-y-8">
+      {/* Desktop Branding - Hidden on Mobile */}
+      <div className="hidden lg:block text-center mb-8">
+        <div className="inline-flex items-center justify-center mb-6">
+          <div className="w-16 h-16 bg-linear-to-br from-yellow-400 to-yellow-600 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-500/30">
+            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center">
+              <div className="w-4 h-4 bg-yellow-400 rounded-full" />
+            </div>
+          </div>
+        </div>
+        <h2 className="text-2xl font-bold text-yellow-400 uppercase tracking-wider mb-2">
+          THE CURATOR EXPERIENCE
+        </h2>
+        <h1 className="text-4xl font-bold text-white mb-2">
+          Welcome Back
         </h1>
-        <p className="text-muted-foreground text-lg font-medium">
-          Enter your credentials to access your dashboard.
+        <p className="text-blue-200 text-sm">
+          Enter your credentials to access your account
+        </p>
+      </div>
+
+      {/* Mobile Header */}
+      <div className="lg:hidden text-center mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">
+          Welcome Back
+        </h1>
+        <p className="text-blue-200 text-sm">
+          Sign in to your LuxeLiving account
         </p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <Label
-              htmlFor="email"
-              className="text-sm font-bold uppercase tracking-wider text-muted-foreground"
-            >
-              Email Address
-            </Label>
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                className="pl-12 h-14 rounded-2xl bg-muted/50 border-border group-focus-within:border-primary group-focus-within:ring-1 group-focus-within:ring-primary transition-all text-base"
-                {...register("email")}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-sm font-medium text-destructive mt-1 ml-1">
-                {errors.email.message}
-              </p>
-            )}
+        {/* Email Field */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-yellow-400/80">
+            EMAIL ADDRESS
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-400/60" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className="pl-12 h-12 bg-white/10 border-white/20 text-white placeholder-white/40 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 backdrop-blur-sm"
+              {...register("email")}
+            />
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label
-                htmlFor="password"
-                className="text-sm font-bold uppercase tracking-wider text-muted-foreground"
-              >
-                Password
-              </Label>
-              <Link
-                href="/forgot-password"
-                className="text-sm font-bold text-primary hover:text-primary/80 transition-colors"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                className="pl-12 pr-12 h-14 rounded-2xl bg-muted/50 border-border group-focus-within:border-primary group-focus-within:ring-1 group-focus-within:ring-primary transition-all text-base"
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {errors.password && (
-              <p className="text-sm font-medium text-destructive mt-1 ml-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+          {errors.email && (
+            <p className="text-xs text-red-400 mt-1">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
+        {/* Password Field */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase tracking-wider text-yellow-400/80">
+              PASSWORD
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-yellow-400 hover:text-yellow-300 transition-colors font-medium"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-yellow-400/60" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              className="pl-12 pr-12 h-12 bg-white/10 border-white/20 text-white placeholder-white/40 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 backdrop-blur-sm"
+              {...register("password")}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-yellow-400/60 hover:text-yellow-400 transition-colors"
+            >
+              {showPassword ? (
+                <EyeOff className="h-5 w-5" />
+              ) : (
+                <Eye className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-xs text-red-400 mt-1">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
+
+        {/* Remember Me Checkbox */}
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <input
+              type="checkbox"
+              id="remember"
+              className="sr-only peer"
+            />
+            <div className="w-5 h-5 bg-white/10 border border-white/20 rounded peer-checked:bg-yellow-400 peer-checked:border-yellow-400 transition-colors flex items-center justify-center">
+              <div className="w-3 h-3 bg-blue-900 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
+            </div>
+          </div>
+          <label htmlFor="remember" className="text-sm text-blue-200 cursor-pointer">
+            Maintain session on this device
+          </label>
+        </div>
+
+        {/* Sign In Button */}
         <Button
           type="submit"
-          className="w-full h-14 rounded-2xl bg-primary text-primary-foreground text-lg font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-70"
+          className="w-full h-12 bg-linear-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-blue-900 font-bold rounded-xl shadow-lg shadow-yellow-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-yellow-500/40 disabled:opacity-70"
           disabled={isLoading}
         >
           {isLoading ? (
@@ -189,48 +221,38 @@ export default function LoginForm() {
               Signing in...
             </>
           ) : (
-            "Sign In"
+            "SIGN IN"
           )}
         </Button>
       </form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
+      {/* Footer Links */}
+      <div className="text-center space-y-4">
+        <div className="flex items-center justify-center space-x-6">
+          <Link
+            href="/forgot-password"
+            className="text-sm text-yellow-400 hover:text-yellow-300 transition-colors font-medium"
+          >
+            FORGOT PASSWORD?
+          </Link>
+          <span className="text-yellow-400/40">•</span>
+          <Link
+            href="/register"
+            className="text-sm text-yellow-400 hover:text-yellow-300 transition-colors font-medium"
+          >
+            Request Registration
+          </Link>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-4 text-muted-foreground font-bold tracking-widest">
-            Or continue with
-          </span>
-        </div>
+        <p className="text-xs text-blue-300/60">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="text-yellow-400 hover:text-yellow-300 font-medium transition-colors"
+          >
+            Sign up here
+          </Link>
+        </p>
       </div>
-
-      {/* <div className="grid grid-cols-2 gap-4">
-        <Button
-          variant="outline"
-          className="h-14 rounded-2xl border-border bg-background hover:bg-muted/50 font-bold gap-3 transition-all"
-        >
-          <Chrome className="h-5 w-5" />
-          Google
-        </Button>
-        <Button
-          variant="outline"
-          className="h-14 rounded-2xl border-border bg-background hover:bg-muted/50 font-bold gap-3 transition-all"
-        >
-          <Github className="h-5 w-5" />
-          GitHub
-        </Button>
-      </div> */}
-
-      <p className="text-center text-muted-foreground font-medium">
-        Don&apos;t have an account?{" "}
-        <Link
-          href="/register"
-          className="text-primary font-black hover:underline underline-offset-4"
-        >
-          Create an account
-        </Link>
-      </p>
     </div>
   );
 }

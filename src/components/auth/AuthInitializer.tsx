@@ -48,8 +48,18 @@ export default function AuthInitializer({
           // Set initial credentials from token
           dispatch(setCredentials({ user, token }));
           
+          // Determine the correct endpoint based on user role
+          let endpoint = `${BASE_URL}/users/me`;
+          if (decoded.role === 'agent') {
+            endpoint = `${BASE_URL}/agents/me`;
+          } else if (decoded.role === 'seller') {
+            endpoint = `${BASE_URL}/sellers/me`;
+          } else if (decoded.role === 'buyer') {
+            endpoint = `${BASE_URL}/buyers/me`;
+          }
+
           // Validate user exists in database
-          fetch(`${BASE_URL}/auth/me`, {
+          fetch(endpoint, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -73,10 +83,9 @@ export default function AuthInitializer({
             }
           })
           .catch(() => {
-            // User doesn't exist in database, clear auth and redirect to login
+            // User doesn't exist in database or server error, clear auth but avoid hard redirect during dev
             document.cookie = "token=; path=/; max-age=0; SameSite=Lax";
             dispatch(logout());
-            window.location.href = '/login';
           });
         } else {
           // Token expired - clear it

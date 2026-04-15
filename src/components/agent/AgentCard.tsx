@@ -8,21 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useRequestAgentMutation } from "@/redux/api/agentApi";
 
-interface Agent {
-  _id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  avatar?: string;
-  title?: string;
-  experience?: number;
-  rating?: number;
-  totalReviews?: number;
-  location?: string;
-  bio?: string;
-  specializations?: string[];
-  isActive?: boolean;
-}
+import { Agent } from "@/types/agent";
 
 interface AgentCardProps {
   agent: Agent;
@@ -45,7 +31,7 @@ export function AgentCard({ agent, index }: AgentCardProps) {
     }
 
     try {
-      await requestAgent(agent._id).unwrap();
+      await requestAgent(agent.id).unwrap();
       toast.success("Agent request sent successfully!");
     } catch (error: unknown) {
       console.error("Failed to request agent:", error);
@@ -83,14 +69,14 @@ export function AgentCard({ agent, index }: AgentCardProps) {
         {agent.name}
       </h3>
       <p className="text-luxury-gold font-medium mb-4 text-sm uppercase tracking-wide">
-        {agent.title || "Real Estate Agent"}
+        {agent.specialization?.[0] || "Real Estate Agent"}
       </p>
 
       <div className="flex justify-center items-center gap-4 text-muted-foreground mb-6">
-        {agent.rating && (
+        {agent.averageRating && (
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-            <span className="font-semibold text-foreground">{agent.rating.toFixed(1)}</span>
+            <span className="font-semibold text-foreground">{agent.averageRating.toFixed(1)}</span>
             {agent.totalReviews && (
               <span className="text-xs text-muted-foreground">({agent.totalReviews})</span>
             )}
@@ -125,7 +111,7 @@ export function AgentCard({ agent, index }: AgentCardProps) {
         </Button>
         
         <Button 
-          onClick={() => window.location.href = `/agents/${agent._id}`} 
+          onClick={() => window.location.href = `/agents/${agent.id}`} 
           variant="outline"
           className="w-full rounded-xl"
         >

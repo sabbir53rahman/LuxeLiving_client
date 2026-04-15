@@ -2,18 +2,23 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
 import {
   Building,
   Eye,
   MapPin,
   Home,
-  BedDouble,
+  Bed,
   Bath,
   Search,
+  User,
+  DollarSign,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Mail } from "lucide-react";
+import { useGetAssignedSellerPropertiesQuery } from "@/redux/api/agentApi";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,18 +27,166 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useGetAssignedSellerPropertiesQuery } from "@/redux/api/agentApi";
-import { Property } from "@/types/agent";
+
+interface AgentProperty {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  images: string[];
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  type: string;
+  status: string;
+  agentId: string;
+  sellerId: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  seller: {
+    id: string;
+    name: string;
+    email: string;
+    contactNumber?: string;
+  };
+  viewings: Array<{
+    id: string;
+    viewingDate: string;
+    status: string;
+  }>;
+}
 import Link from "next/link";
 import Image from "next/image";
+
+// Section Header Component to match agent dashboard design
+const SectionHeader = ({
+  numeral,
+  title,
+}: {
+  numeral: string;
+  title: string;
+}) => (
+  <div className="flex items-center gap-4 my-8">
+    <div className="h-px w-8 bg-white/10" />
+    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40 whitespace-nowrap">
+      {numeral}. <span className="text-white/80">{title}</span>
+    </span>
+    <div className="h-px flex-1 bg-white/10" />
+  </div>
+);
+
+function PropertyCard({
+  property,
+}: {
+  property: AgentProperty;
+  index: number;
+}) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  return (
+    <Card className="bg-[#1A1A1A] border border-white/5 rounded-none overflow-hidden">
+      <CardContent className="p-0">
+        <div className="flex flex-col lg:flex-row">
+          {/* Property Image */}
+          <div className="lg:w-80 h-48 lg:h-auto">
+            {property.images && property.images.length > 0 ? (
+              <Image
+                src={property.images[0]}
+                alt={property.title}
+                className="w-full h-full object-cover"
+                width={320}
+                height={192}
+              />
+            ) : (
+              <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                <Home className="w-12 h-12 text-white/20" />
+              </div>
+            )}
+          </div>
+          
+          {/* Property & Seller Info */}
+          <div className="flex-1 p-8">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-serif text-white mb-2">{property.title}</h3>
+                <div className="flex items-center gap-4 text-white/60 text-sm">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4" />
+                    {property.location}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Bed className="w-4 h-4" />
+                    {property.bedrooms} beds
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Bath className="w-4 h-4" />
+                    {property.bathrooms} baths
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-serif text-luxury-gold">
+                  {formatCurrency(property.price)}
+                </p>
+                <Badge className="bg-luxury-gold/20 text-luxury-gold border-none mt-1">
+                  {property.status}
+                </Badge>
+              </div>
+            </div>
+            
+            {/* Seller Information */}
+            <div className="border-t border-white/10 pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-luxury-gold/20 flex items-center justify-center">
+                    <User className="w-6 h-6 text-luxury-gold" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{property.seller.name}</p>
+                    <div className="flex items-center gap-2 text-white/60 text-sm">
+                      <Mail className="w-3 h-3" />
+                      {property.seller.email}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 rounded-none">
+                    <Mail className="w-4 h-4 mr-1" />
+                    Contact
+                  </Button>
+                  <Link href={`/properties/${property.id}`}>
+                    <Button 
+                      size="sm" 
+                      className="bg-luxury-gold hover:bg-white text-black font-black uppercase tracking-wider rounded-none"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      View
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function AgentPropertiesPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [sortOrder, setSortOrder] = useState("desc");
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
 
@@ -46,12 +199,9 @@ export default function AgentPropertiesPage() {
     limit,
     searchTerm,
     status: statusFilter !== "all" ? statusFilter : undefined,
-    sortBy,
-    sortOrder,
   });
 
-  const agent = agentData?.data;
-  const properties = agent?.assignedProperties || [];
+  const properties = agentData?.data || [];
   const pagination = agentData?.meta ?? {
     total: 0,
     page: 1,
@@ -59,342 +209,221 @@ export default function AgentPropertiesPage() {
     totalPages: 0,
   };
 
-  const handleStatusFilterChange = (value: string | null) => {
-    setStatusFilter(value || "all");
-  };
-
-  const handleSortByChange = (value: string | null) => {
-    setSortBy(value || "createdAt");
-  };
-
-  const handleSortOrderChange = (value: string | null) => {
-    setSortOrder(value || "desc");
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "sold":
-        return "bg-blue-100 text-blue-700 border-blue-200";
-      case "rented":
-        return "bg-purple-100 text-purple-700 border-purple-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
 
   if (authLoading || isLoading) {
     return (
-      <div className="space-y-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-96"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-64 bg-gray-200 rounded-3xl"></div>
-            </div>
-          ))}
-        </div>
+      <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center space-y-6">
+        <div className="w-12 h-12 border-2 border-luxury-gold border-t-transparent rounded-full animate-spin" />
+        <p className="text-white/40 font-black uppercase tracking-[0.3em] text-[10px]">
+          Loading Properties
+        </p>
       </div>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="p-6 rounded-3xl bg-red-50 border border-red-200">
-        <h2 className="text-xl font-bold text-red-800 mb-2">
-          Authentication Required
-        </h2>
-        <p className="text-red-600">
-          Please log in to access your agent properties.
-        </p>
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-10">
+        <Card className="max-w-md w-full rounded-[2rem] border-white/5 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <CardContent className="p-12 text-center space-y-6">
+            <div className="w-12 h-12 bg-white/5 rounded-2xl mx-auto flex items-center justify-center">
+              <User className="w-6 h-6 text-luxury-gold" />
+            </div>
+            <h2 className="text-2xl font-serif text-white">
+              Access Restricted
+            </h2>
+            <Link href="/login" className="block">
+              <Button className="w-full h-12 bg-luxury-gold hover:bg-white text-black font-black uppercase tracking-widest transition-all">
+                Identify Yourself
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 rounded-3xl bg-red-50 border border-red-200">
-        <h2 className="text-xl font-bold text-red-800 mb-2">
-          Error Loading Properties
-        </h2>
-        <p className="text-red-600">
-          Failed to load properties. Please try again later.
-        </p>
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-10">
+        <Card className="max-w-md w-full rounded-[2rem] border-white/5 bg-white/5 backdrop-blur-xl overflow-hidden">
+          <CardContent className="p-12 text-center space-y-6">
+            <div className="w-12 h-12 bg-red-500/20 rounded-2xl mx-auto flex items-center justify-center">
+              <Building className="w-6 h-6 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-serif text-white">
+              Error Loading Properties
+            </h2>
+            <p className="text-white/40">
+              Failed to load properties. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (!agent) {
-    return (
-      <div className="p-6 rounded-3xl bg-yellow-50 border border-yellow-200">
-        <h2 className="text-xl font-bold text-yellow-800 mb-2">
-          No Agent Profile
-        </h2>
-        <p className="text-yellow-600">
-          You don&apos;t have an agent profile yet. Please contact support to
-          set up your profile.
-        </p>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div>
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-3xl lg:text-4xl font-heading font-bold text-foreground"
-          >
-            My Properties
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-muted-foreground mt-2 text-lg"
-          >
-            Manage and showcase your assigned properties.
-          </motion.p>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-3"
-        >
-          <Link href="/agent-dashboard">
-            <Button
-              variant="outline"
-              className="rounded-2xl h-12 px-6 font-semibold"
-            >
-              Back to Dashboard
-            </Button>
-          </Link>
-        </motion.div>
-      </div>
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-card/40 backdrop-blur-md p-5 rounded-3xl border border-border/50 shadow-sm"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div className="relative md:col-span-2">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50" />
-            <Input
-              placeholder="Search properties by title or location..."
-              className="pl-12 h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-purple-500/20 transition-all text-base"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <div className="min-h-screen bg-[#0A0A0A] text-white font-sans selection:bg-luxury-gold selection:text-black pb-20">
+      {/* Top Navigation / Header */}
+      <header className="px-10 py-12">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-5xl font-serif text-white tracking-tight leading-none">
+              Assigned Properties
+            </h1>
+            <p className="text-white/40 text-sm font-medium italic mt-2">
+              Managing your luxury property portfolio.
+            </p>
           </div>
-          <Select value={statusFilter} onValueChange={handleStatusFilterChange}>
-            <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none px-6 font-semibold">
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-2xl">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="sold">Sold</SelectItem>
-              <SelectItem value="rented">Rented</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={handleSortByChange}>
-            <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none px-6 font-semibold">
-              <SelectValue placeholder="Sort By" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-2xl">
-              <SelectItem value="createdAt">Date</SelectItem>
-              <SelectItem value="price">Price</SelectItem>
-              <SelectItem value="title">Title</SelectItem>
-              <SelectItem value="location">Location</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sortOrder} onValueChange={handleSortOrderChange}>
-            <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none px-6 font-semibold">
-              <SelectValue placeholder="Order" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-2xl">
-              <SelectItem value="desc">Newest First</SelectItem>
-              <SelectItem value="asc">Oldest First</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
-      </motion.div>
+      </header>
 
-      {/* Properties Grid */}
-      {properties.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-24 bg-muted/10 rounded-[3rem] border border-dashed border-border"
-        >
-          <div className="w-28 h-28 bg-muted rounded-full flex items-center justify-center mx-auto mb-6 text-muted-foreground/20">
-            <Building className="w-12 h-12" />
-          </div>
-          <h3 className="text-2xl font-bold text-foreground mb-3">
-            No Properties Found
-          </h3>
-          <p className="text-muted-foreground mb-8 max-w-sm mx-auto leading-relaxed">
-            You don&apos;t have any properties assigned to you yet. Contact your
-            agency to get started.
-          </p>
-        </motion.div>
-      ) : (
-        <>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {properties.map((property: Property, index: number) => (
-              <motion.div
-                key={property._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="group bg-card hover:bg-muted/5 rounded-[2.5rem] border border-border shadow-soft overflow-hidden transition-all duration-500 hover:-translate-y-1"
-              >
-                {/* Property Image */}
-                <div className="relative h-48 overflow-hidden">
-                  {property.images && property.images.length > 0 ? (
-                    <Image
-                      src={property.images[0]}
-                      alt={property.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      width={400}
-                      height={300}
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-linear-to-br from-luxury-emerald/20 to-luxury-emerald/10 flex items-center justify-center">
-                      <Home className="w-12 h-12 text-luxury-emerald/50" />
-                    </div>
-                  )}
-                  <div className="absolute top-3 right-3">
-                    <Badge className={getStatusColor(property.status)}>
-                      {property.status}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-foreground font-heading leading-tight line-clamp-2 group-hover:text-purple-600 transition-colors">
-                      {property.title}
-                    </h3>
-                    <div className="text-right">
-                      <p className="text-2xl font-black text-luxury-gold font-heading">
-                        ${property.price.toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 text-muted-foreground text-sm mb-4">
-                    <MapPin className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{property.address}</span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                    <span className="flex items-center gap-1">
-                      <BedDouble className="h-4 w-4" />
-                      {property.bedrooms} Beds
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Bath className="h-4 w-4" />
-                      {property.bathrooms} Baths
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Home className="h-4 w-4" />
-                      {property.area} sqft
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={property.seller.profilePhoto || ""}
-                          alt={property.seller.name}
-                        />
-                        <AvatarFallback className="text-xs font-bold">
-                          {property.seller.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-xs font-medium text-foreground">
-                          {property.seller.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {property.seller.email}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Link href={`/properties/${property._id}`}>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-xl border-foreground/10 hover:bg-foreground hover:text-background transition-colors"
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-8"
-            >
-              <div className="flex justify-center">
-                <Button
-                  onClick={() => setPage(page - 1)}
-                  disabled={page <= 1}
-                  variant="outline"
-                  className="rounded-xl mr-2"
-                >
-                  Previous
-                </Button>
-                <span className="px-4 py-2 text-sm text-muted-foreground">
-                  Page {page} of {pagination.totalPages}
-                </span>
-                <Button
-                  onClick={() => setPage(page + 1)}
-                  disabled={page >= pagination.totalPages}
-                  variant="outline"
-                  className="rounded-xl ml-2"
-                >
-                  Next
-                </Button>
+      <div className="px-10 space-y-12">
+        {/* I. NETWORK SYNOPSIS */}
+        <SectionHeader numeral="I" title="NETWORK SYNOPSIS" />
+        
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Total Properties</p>
+                <p className="text-3xl font-serif text-white font-bold mt-1">{properties.length}</p>
               </div>
-            </motion.div>
-          )}
-        </>
-      )}
+              <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center">
+                <Building className="w-6 h-6 text-luxury-gold" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Available</p>
+                <p className="text-3xl font-serif text-white font-bold mt-1">
+                  {properties.filter((p: AgentProperty) => p.status === "available").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                <Star className="w-6 h-6 text-green-400" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Total Value</p>
+                <p className="text-3xl font-serif text-white font-bold mt-1">
+                  ${properties.reduce((sum: number, p: AgentProperty) => sum + p.price, 0).toLocaleString()}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-blue-400" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Sold/Rented</p>
+                <p className="text-3xl font-serif text-white font-bold mt-1">
+                  {properties.filter((p: AgentProperty) => p.status === "sold" || p.status === "rented").length}
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                <Eye className="w-6 h-6 text-purple-400" />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* II. PROPERTY SEARCH & FILTERS */}
+        <SectionHeader numeral="II" title="PROPERTY SEARCH & FILTERS" />
+
+        <div className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+              <Input
+                placeholder="Search properties..."
+                className="pl-12 bg-[#1A1A1A] border-white/10 text-white placeholder:text-white/40 rounded-none h-10 w-64"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value || "all")}>
+              <SelectTrigger className="bg-[#1A1A1A] border-white/10 text-white rounded-none h-10 w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1A1A1A] border-white/10 text-white">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="available">Available</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="rented">Rented</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* III. PROPERTY LISTINGS */}
+        <SectionHeader numeral="III" title="PROPERTY LISTINGS" />
+
+        {properties.length === 0 ? (
+          <div className="text-center py-24 bg-[#1A1A1A] border border-white/5 rounded-none border-dashed">
+            <div className="w-28 h-28 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Building className="w-12 h-12 text-luxury-gold" />
+            </div>
+            <h3 className="text-2xl font-serif text-white mb-3">
+              No Properties Found
+            </h3>
+            <p className="text-white/40 mb-8 max-w-sm mx-auto leading-relaxed">
+              You don&apos;t have any properties assigned to you yet. Contact
+              your agency to get started.
+            </p>
+            <Link href="/agent-dashboard">
+              <Button className="bg-luxury-gold hover:bg-white text-black font-black uppercase tracking-widest h-12 px-8 transition-all">
+                Return to Dashboard
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            {properties.map((property: AgentProperty, index: number) => (
+              <PropertyCard
+                key={property.id}
+                property={property}
+                index={index}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex justify-center gap-4 mt-8">
+            <Button
+              onClick={() => setPage(page - 1)}
+              disabled={page <= 1}
+              className="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-wider h-12 px-8 rounded-none transition-all border border-white/10"
+            >
+              Previous
+            </Button>
+            <span className="px-4 py-3 text-sm text-white/40">
+              Page {page} of {pagination.totalPages}
+            </span>
+            <Button
+              onClick={() => setPage(page + 1)}
+              disabled={page >= pagination.totalPages}
+              className="bg-white/10 hover:bg-white/20 text-white font-black uppercase tracking-wider h-12 px-8 rounded-none transition-all border border-white/10"
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

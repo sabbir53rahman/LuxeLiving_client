@@ -2,69 +2,96 @@
 
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { 
+import {
   ArrowLeft,
   Mail,
-  Phone,
   Building,
   Trash2,
   Users,
-  Star,
   Search,
   UserCheck,
-  Plus
+  Plus,
+  DollarSign,
+  ShieldCheck,
+  Loader2,
+  Bed,
+  Bath,
+  MapPin,
+  Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useGetMySellerPropertiesQuery } from "@/redux/api/sellerApi";
 import { useRemoveAgentFromPropertyMutation } from "@/redux/api/sellerApi";
-import { DataTable, Column } from "@/components/ui/data-table";
 import { Pagination } from "@/components/ui/Pagination";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Property {
   id: string;
   title: string;
-  location: string;
+  description: string;
   price: number;
+  location: string;
+  images: string[];
   bedrooms: number;
   bathrooms: number;
   area: number;
-  images: string[];
   type: string;
-  status?: string;
-  agentId?: string;
-  sellerId?: string;
-  seller?: {
+  status: string;
+  agentId: string;
+  sellerId: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  seller: {
     id: string;
     name: string;
     email: string;
     contactNumber?: string;
   };
-  agent?: {
+  agent: {
     id: string;
     name: string;
     email: string;
     contactNumber?: string;
-    avatar?: string;
-    rating?: number;
-    experience?: number;
   };
-  viewings?: Array<{
+  viewings: Array<{
     id: string;
     viewingDate: string;
     status: string;
   }>;
-  views?: number;
-  createdAt?: string;
-  updatedAt?: string;
 }
+
+// Section Header Component to match the luxury aesthetic
+const SectionHeader = ({
+  numeral,
+  title,
+}: {
+  numeral: string;
+  title: string;
+}) => (
+  <div className="flex items-center gap-6">
+    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-luxury-gold">
+      {numeral}
+    </span>
+    <h2 className="text-[24px] font-serif text-white font-black">
+      {title}
+    </h2>
+    <div className="flex-1 h-px bg-linear-to-r from-white/20 to-transparent" />
+  </div>
+);
 
 export default function AssignedAgentsPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -73,7 +100,7 @@ export default function AssignedAgentsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
 
-  const { data: propertiesData, isLoading: propertiesLoading, error } = useGetMySellerPropertiesQuery({
+  const { data: propertiesData, isLoading: propertiesLoading, error, refetch: refetchProperties } = useGetMySellerPropertiesQuery({
     searchTerm,
     status: statusFilter !== "all" ? statusFilter : undefined,
     page,
@@ -85,6 +112,8 @@ export default function AssignedAgentsPage() {
     try {
       await removeAgentFromProperty(propertyId).unwrap();
       toast.success("Agent removed from property successfully!");
+      // Manually refetch the properties to ensure UI updates
+      await refetchProperties();
     } catch (error: unknown) {
       console.error("Failed to remove agent:", error);
       const errorMessage = (error as { data?: { message?: string } })?.data?.message || "Failed to remove agent. Please try again.";
@@ -92,291 +121,191 @@ export default function AssignedAgentsPage() {
     }
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
 
-  // Process properties to get unique agents
+  // Filter properties that have agents assigned
   const properties = propertiesData?.data || [];
-  const agentsWithProperties = properties
-    .filter((property: Property) => property.agent)
-    .reduce((acc: Array<{agent: Property['agent'], properties: Property[]}>, property: Property) => {
-      const existingAgent = acc.find(item => item.agent?.id === property.agent?.id);
-      if (existingAgent && property.agent) {
-        existingAgent.properties.push(property);
-      } else if (property.agent) {
-        acc.push({
-          agent: property.agent,
-          properties: [property]
-        });
-      }
-      return acc;
-    }, []);
+  const assignedProperties = properties.filter((property: Property) => property.agent && property.agentId);
+  const pagination = propertiesData?.meta ?? {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  };
 
-  // Define table columns
-  const columns: Column<{agent: Property['agent'], properties: Property[]}>[] = [
-    {
-      key: "agent",
-      header: "Agent",
-      cell: (row) => (
-        <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={row.agent?.avatar} alt={row.agent?.name} />
-            <AvatarFallback className="bg-luxury-emerald text-white text-sm font-bold">
-              {row.agent?.name?.charAt(0)?.toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <div className="font-medium">{row.agent?.name}</div>
-            {row.agent?.rating && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                <Star className="w-3 h-3 text-yellow-500" fill="currentColor" />
-                <span>{row.agent.rating.toFixed(1)}</span>
-                {row.agent?.experience && (
-                  <span>· {row.agent.experience} years</span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "contact",
-      header: "Contact",
-      cell: (row) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1 text-sm">
-            <Mail className="w-3 h-3 text-muted-foreground" />
-            <span className="truncate">{row.agent?.email}</span>
-          </div>
-          {row.agent?.contactNumber && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <Phone className="w-3 h-3" />
-              <span>{row.agent.contactNumber}</span>
-            </div>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "properties",
-      header: "Properties",
-      cell: (row) => (
-        <div>
-          <div className="font-medium">{row.properties.length}</div>
-          <div className="text-sm text-muted-foreground">
-            {row.properties.map((p: Property) => p.title).join(', ')}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "value",
-      header: "Value",
-      cell: (row) => (
-        <div>
-          <div className="font-medium">
-            ${row.properties.reduce((sum: number, p: Property) => sum + p.price, 0).toLocaleString()}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Total value
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      cell: () => (
-        <Badge className="bg-green-100 text-green-700">
-          Active
-        </Badge>
-      ),
-    },
-    {
-      key: "actions",
-      header: "Actions",
-      cell: (row) => (
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="rounded-xl">
-            <Mail className="w-3 h-3 mr-1" />
-            Contact
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="rounded-xl text-red-600 hover:text-red-700 hover:bg-red-50"
-            onClick={() => handleRemoveAgent(row.properties[0]?.id)}
-            disabled={removeLoading}
-          >
-            <Trash2 className="w-3 h-3 mr-1" />
-            Remove
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   if (isLoading || propertiesLoading) {
     return (
-      <div className="space-y-8">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-64 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-96"></div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-96 bg-gray-200 rounded-3xl"></div>
-            </div>
-          ))}
-        </div>
+      <div className="min-h-screen bg-[#0E0E0E] flex flex-col items-center justify-center space-y-6">
+        <Loader2 className="w-12 h-12 text-luxury-gold animate-spin" />
+        <p className="text-white/40 font-black uppercase tracking-[0.3em] text-[10px]">
+          Accessing Assigned Agents
+        </p>
       </div>
     );
   }
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="p-6 rounded-3xl bg-red-50 border border-red-200">
-        <h2 className="text-xl font-bold text-red-800 mb-2">Authentication Required</h2>
-        <p className="text-red-600">Please log in to view your assigned agents.</p>
+      <div className="min-h-screen bg-[#0E0E0E] flex items-center justify-center p-10">
+        <Card className="max-w-md w-full border-white/5 bg-white/5 backdrop-blur-xl overflow-hidden rounded-sm">
+          <CardContent className="p-12 text-center space-y-6">
+            <ShieldCheck className="w-12 h-12 text-luxury-gold mx-auto" />
+            <h2 className="text-2xl font-serif text-white">
+              Access Restricted
+            </h2>
+            <p className="text-white/60 leading-relaxed">
+              Please log in to view your assigned agents.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 rounded-3xl bg-red-50 border border-red-200">
-        <h2 className="text-xl font-bold text-red-800 mb-2">Error Loading Agents</h2>
-        <p className="text-red-600">Failed to load assigned agents. Please try again later.</p>
+      <div className="min-h-screen bg-[#0E0E0E] flex items-center justify-center p-10">
+        <Card className="max-w-md w-full border-white/5 bg-white/5 backdrop-blur-xl overflow-hidden rounded-sm">
+          <CardContent className="p-12 text-center space-y-6">
+            <h2 className="text-2xl font-serif text-white">
+              Error Loading Agents
+            </h2>
+            <p className="text-white/60 leading-relaxed">
+              Failed to load assigned agents. Please try again later.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="min-h-screen bg-[#0E0E0E]">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-        <div className="flex items-center gap-4">
-          <Link href="/seller-dashboard">
-            <Button variant="outline" size="sm" className="rounded-xl">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
-          <div>
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl lg:text-4xl font-heading font-bold text-foreground"
-            >
-              Assigned Agents
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-muted-foreground mt-2 text-lg"
-            >
-              Manage agents assigned to your properties.
-            </motion.p>
+      <header className="border-b border-white/10">
+        <div className="px-10 py-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <Link href="/seller-dashboard">
+                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 rounded-none">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-3xl font-serif text-white font-black">
+                  Assigned Agents
+                </h1>
+                <p className="text-white/40 text-sm mt-1">
+                  Manage agents assigned to your properties
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Input
+                  placeholder="Search properties..."
+                  className="pl-12 bg-[#1A1A1A] border-white/10 text-white placeholder:text-white/40 rounded-none h-10 w-64"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value || "all")}>
+                <SelectTrigger className="bg-[#1A1A1A] border-white/10 text-white rounded-none h-10 w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1A1A1A] border-white/10 text-white">
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="sold">Sold</SelectItem>
+                  <SelectItem value="rented">Rented</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
+      </header>
+
+      <div className="px-10 space-y-12">
+        {/* I. NETWORK SYNOPSIS */}
+        <SectionHeader numeral="I" title="NETWORK SYNOPSIS" />
         
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-3"
-        >
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50" />
-            <Input
-              placeholder="Search agents..."
-              className="pl-12 h-12 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-purple-500/20 transition-all text-base w-64"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value || "all")}>
-            <SelectTrigger className="h-12 rounded-2xl bg-muted/30 border-none px-6 font-semibold w-48">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl border-none shadow-2xl">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="sold">Sold</SelectItem>
-            </SelectContent>
-          </Select>
-        </motion.div>
-      </div>
-
-      {/* Stats Overview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-3 gap-4"
-      >
-        <Card className="rounded-2xl border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Assigned Agents</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{agentsWithProperties.length}</div>
-            <p className="text-xs text-muted-foreground">Active collaborations</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Properties</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{properties.length}</div>
-            <p className="text-xs text-muted-foreground">Your listings</p>
-          </CardContent>
-        </Card>
-
-        <Card className="rounded-2xl border-border shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">With Agents</CardTitle>
-            <UserCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {properties.filter((p: Property) => p.agent).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Agent-managed</p>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Agents Table */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-      >
-        {agentsWithProperties.length === 0 ? (
-          <Card className="rounded-3xl border-border shadow-sm">
-            <CardContent className="text-center py-24">
-              <div className="w-28 h-28 bg-muted rounded-full flex items-center justify-center mx-auto mb-6 text-muted-foreground/20">
-                <Users className="w-12 h-12" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Total Properties</p>
+                <p className="text-2xl font-serif text-white mt-2">{properties.length}</p>
               </div>
-              <h3 className="text-2xl font-bold text-foreground mb-3">No Agents Assigned</h3>
-              <p className="text-muted-foreground mb-10 max-w-sm mx-auto leading-relaxed">
+              <Building className="w-8 h-8 text-luxury-gold" />
+            </div>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Assigned Properties</p>
+                <p className="text-2xl font-serif text-white mt-2">{assignedProperties.length}</p>
+              </div>
+              <Users className="w-8 h-8 text-luxury-gold" />
+            </div>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Active Agents</p>
+                <p className="text-2xl font-serif text-white mt-2">
+                  {new Set(assignedProperties.map((p: Property) => p.agent?.id)).size}
+                </p>
+              </div>
+              <UserCheck className="w-8 h-8 text-luxury-gold" />
+            </div>
+          </Card>
+          
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white/40 text-sm font-black uppercase tracking-widest">Total Value</p>
+                <p className="text-2xl font-serif text-white mt-2">
+                  {formatCurrency(assignedProperties.reduce((sum: number, p: Property) => sum + p.price, 0))}
+                </p>
+              </div>
+              <DollarSign className="w-8 h-8 text-luxury-gold" />
+            </div>
+          </Card>
+        </div>
+
+      {/* II. PROPERTY ASSIGNMENTS */}
+        <SectionHeader numeral="II" title="PROPERTY ASSIGNMENTS" />
+        
+        {assignedProperties.length === 0 ? (
+          <Card className="bg-[#1A1A1A] border border-white/5 rounded-none">
+            <CardContent className="text-center py-24">
+              <div className="w-28 h-28 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="w-12 h-12 text-white/20" />
+              </div>
+              <h3 className="text-2xl font-serif text-white mb-3">No Agents Assigned</h3>
+              <p className="text-white/60 mb-10 max-w-sm mx-auto leading-relaxed">
                 {searchTerm 
-                  ? `No agents match "${searchTerm}". Try different keywords or browse all agents.`
+                  ? `No properties match "${searchTerm}". Try different keywords.`
                   : "You haven't assigned any agents to your properties yet."
                 }
               </p>
               <Link href="/seller-dashboard/find-agents">
-                <Button className="rounded-2xl h-12 px-6 font-semibold">
+                <Button className="bg-luxury-gold hover:bg-white text-black rounded-none h-12 px-6 font-black uppercase tracking-widest text-sm">
                   <Plus className="w-4 h-4 mr-2" />
                   Find Agents
                 </Button>
@@ -384,25 +313,111 @@ export default function AssignedAgentsPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
-            <DataTable
-              data={agentsWithProperties}
-              columns={columns as Column<{ id?: string; _id?: string; agent?: { id: string; name: string; email: string; contactNumber?: string; avatar?: string; rating?: number; experience?: number; }; properties: Property[]; }>[]}
-              isLoading={propertiesLoading}
-              emptyMessage="No agents assigned to your properties."
-            />
-            
-            {/* Pagination */}
-            {propertiesData?.meta && propertiesData.meta.totalPages > 1 && (
-              <Pagination
-                currentPage={propertiesData.meta.page}
-                totalPages={propertiesData.meta.totalPages}
-                onPageChange={handlePageChange}
-              />
-            )}
+          <div className="grid grid-cols-1 gap-6">
+            {assignedProperties.map((property: Property) => (
+              <Card key={property.id} className="bg-[#1A1A1A] border border-white/5 rounded-none overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="flex flex-col lg:flex-row">
+                    {/* Property Image */}
+                    <div className="lg:w-80 h-48 lg:h-auto">
+                      {property.images && property.images.length > 0 ? (
+                        <Image
+                          src={property.images[0]}
+                          alt={property.title}
+                          className="w-full h-full object-cover"
+                          width={320}
+                          height={192}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                          <Home className="w-12 h-12 text-white/20" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Property & Agent Info */}
+                    <div className="flex-1 p-8">
+                      <div className="flex items-start justify-between mb-6">
+                        <div>
+                          <h3 className="text-xl font-serif text-white mb-2">{property.title}</h3>
+                          <div className="flex items-center gap-4 text-white/60 text-sm">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {property.location}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Bed className="w-4 h-4" />
+                              {property.bedrooms} beds
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Bath className="w-4 h-4" />
+                              {property.bathrooms} baths
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-serif text-luxury-gold">
+                            {formatCurrency(property.price)}
+                          </p>
+                          <Badge className="bg-luxury-gold/20 text-luxury-gold border-none mt-1">
+                            {property.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Agent Information */}
+                      <div className="border-t border-white/10 pt-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                              <AvatarFallback className="bg-luxury-gold text-black font-bold">
+                                {property.agent?.name?.charAt(0)?.toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-white font-medium">{property.agent?.name}</p>
+                              <div className="flex items-center gap-2 text-white/60 text-sm">
+                                <Mail className="w-3 h-3" />
+                                {property.agent?.email}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-3">
+                            <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5 rounded-none">
+                              <Mail className="w-4 h-4 mr-1" />
+                              Contact
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded-none"
+                              onClick={() => handleRemoveAgent(property.id)}
+                              disabled={removeLoading}
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
-      </motion.div>
+        
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
+      </div>
     </div>
   );
 }

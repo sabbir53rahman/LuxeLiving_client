@@ -6,7 +6,7 @@ import {
   Home,
   Search,
   UserCheck,
-  Building,
+  // Building,
 } from "lucide-react";
 
 const sellerLinks = [
@@ -22,11 +22,11 @@ const sellerLinks = [
     href: "/seller-dashboard/assigned-agents",
     icon: UserCheck,
   },
-  {
-    name: "Property Agents",
-    href: "/seller-dashboard/property-agents",
-    icon: Building,
-  },
+  // {
+  //   name: "Property Agents",
+  //   href: "/seller-dashboard/property-agents",
+  //   icon: Building,
+  // },
 ];
 
 export default function SellerDashboardLayout({

@@ -34,7 +34,25 @@ export const authApi = baseApi.injectEndpoints({
     }),
     validateUser: builder.query({
       query: () => ({
-        url: "/auth/me",
+        url: "/users/me",
+        method: "GET",
+      }),
+    }),
+    validateAgent: builder.query({
+      query: () => ({
+        url: "/agents/me",
+        method: "GET",
+      }),
+    }),
+    validateSeller: builder.query({
+      query: () => ({
+        url: "/sellers/me",
+        method: "GET",
+      }),
+    }),
+    validateBuyer: builder.query({
+      query: () => ({
+        url: "/buyers/me",
         method: "GET",
       }),
     }),
@@ -51,4 +69,7 @@ export const {
   useRegisterBuyerMutation,
   useRegisterSellerMutation,
   useValidateUserQuery,
+  useValidateAgentQuery,
+  useValidateSellerQuery,
+  useValidateBuyerQuery,
 } = authApi;

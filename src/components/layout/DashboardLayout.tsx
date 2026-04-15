@@ -5,14 +5,10 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { 
-  Settings, 
-  LogOut, 
-  Home
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { logout } from "@/redux/features/auth/authSlice";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "../ui/button";
 
 interface NavLink {
   name: string;
@@ -33,10 +29,14 @@ export default function DashboardLayout({
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    if (!isLoading && (!isAuthenticated || !user)) {
+    const hasToken = document.cookie.split(';').some(item => item.trim().startsWith('token='));
+    
+    // Only redirect if NOT loading, NOT authenticated, AND actually have no token cookie
+    // This prevents accidental redirects during hot-reloads where Redux is cleared but cookies remain
+    if (!isLoading && !isAuthenticated && !hasToken) {
       router.push("/login");
     }
-  }, [isAuthenticated, isLoading, user, router]);
+  }, [isAuthenticated, isLoading, router]);
 
   if (isLoading || !user) {
     return (
@@ -55,85 +55,93 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
       {/* Sidebar */}
-      <aside className="w-full md:w-72 bg-luxury-slate relative border-r border-white/5 flex-col hidden md:flex min-h-screen">
-        <div className="p-8 pb-4">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl text-luxury-gold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-luxury-gold">
-              <Home className="h-5 w-5 text-luxury-slate" />
-            </div>
-            <span className="font-heading">LuxeLiving</span>
+      <aside className="w-full md:w-72 bg-[#0A0A0A] relative border-r border-white/5 flex-col hidden md:flex min-h-screen">
+        <div className="p-10 pb-10">
+          <Link href="/" className="space-y-1 block group">
+            <h2 className="font-serif text-3xl text-luxury-gold tracking-tight group-hover:text-white transition-colors">
+              Luxe Living
+            </h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30">
+              Elite Tier
+            </p>
           </Link>
         </div>
 
-        <div className="px-6 py-6 border-b border-white/5">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 border-2 border-luxury-gold/50">
-              <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
-              <AvatarFallback className="bg-luxury-gold text-luxury-slate font-bold">
-                {user.name?.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-semibold text-white whitespace-nowrap overflow-hidden text-ellipsis w-40">{user.name}</h3>
-              <p className="text-sm text-luxury-gold capitalize">{user.role}</p>
-            </div>
-          </div>
-        </div>
-
-        <nav className="flex-1 px-4 py-8 space-y-2 relative z-10">
+        <nav className="flex-1 px-6 space-y-2 relative z-10">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.name}
                 href={link.href}
-                className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 relative group overflow-hidden ${
-                  isActive 
-                    ? "text-luxury-slate font-semibold" 
-                    : "text-white/60 hover:text-white"
+                className={`flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-500 relative group overflow-hidden ${
+                  isActive
+                    ? "text-luxury-gold bg-white/3 shadow-inner"
+                    : "text-white/60 hover:text-white/80 hover:bg-white/2"
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 bg-luxury-gold rounded-2xl z-0"
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="absolute inset-0 border-l-2 border-luxury-gold z-0"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
                   />
                 )}
-                
-                <span className="relative z-10 flex items-center gap-4">
-                  <link.icon className={`h-5 w-5 ${isActive ? "text-luxury-slate" : "group-hover:scale-110 transition-transform"}`} />
+
+                <span className="relative z-10 flex items-center gap-4 text-xs font-black uppercase tracking-widest">
+                  <link.icon
+                    className={`h-4 w-4 ${isActive ? "text-luxury-gold" : "opacity-50"}`}
+                  />
                   {link.name}
                 </span>
               </Link>
             );
           })}
+
+          {user.role === "seller" && (
+            <div className="pt-8 px-2">
+              <Link href="/seller-dashboard/add-property">
+                <Button className="w-full h-14 bg-white/5 hover:bg-luxury-gold hover:text-white border border-white/5 text-luxury-gold font-serif text-lg rounded-sm transition-all group shadow-2xl">
+                  New Listing
+                </Button>
+              </Link>
+            </div>
+          )}
         </nav>
 
-        <div className="p-4 border-t border-white/5">
-          <div className="cursor-pointer flex items-center gap-4 px-4 py-3 rounded-2xl text-white/60 hover:text-white hover:bg-white/5 transition-colors">
-            <Settings className="h-5 w-5" />
-            Settings
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-4 px-4 py-3 rounded-2xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors w-full text-left mt-2"
+        <div className="p-8 space-y-4">
+          <Link
+            href="/help"
+            className="flex items-center gap-4 px-4 py-2 text-white/40 hover:text-white/60 transition-colors text-[10px] font-black uppercase tracking-widest"
           >
-            <LogOut className="h-5 w-5" />
-            Sign Out
+            <div className="w-6 h-6 rounded-full border border-white/10 flex items-center justify-center">
+              ?
+            </div>
+            Help
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-4 px-4 py-2 text-red-400 transition-colors text-[10px] font-black uppercase tracking-widest w-full text-left"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-[#F8F9FA] dark:bg-[#0A0A0A]">
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-[#0E0E0E]">
         {/* Mobile Header */}
-        <div className="md:hidden glass-strong sticky top-0 z-50 px-4 py-3 border-b flex justify-between items-center bg-luxury-slate border-white/10">
-           <Link href="/" className="flex items-center gap-2 font-bold text-lg text-luxury-gold">
-            <Home className="h-5 w-5" />
-            <span>LuxeLiving</span>
+        <div className="md:hidden sticky top-0 z-50 px-6 py-4 border-b border-white/5 bg-[#0A0A0A] flex justify-between items-center text-white">
+          <Link href="/" className="font-serif text-xl text-luxury-gold">
+            The Curator
           </Link>
-          <button onClick={handleLogout} className="p-2 text-white/50 hover:text-white">
+          <button
+            onClick={handleLogout}
+            className="p-2 text-white/30 hover:text-white"
+          >
             <LogOut className="h-5 w-5" />
           </button>
         </div>

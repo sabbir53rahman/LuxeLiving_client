@@ -1,7 +1,7 @@
 // Agent Types and Interfaces
 
 export interface Agent {
-  _id: string;
+  id: string;
   userId: string;
   name: string;
   email: string;
@@ -18,9 +18,19 @@ export interface Agent {
   isAvailable?: boolean;
   isActive?: boolean;
   totalReviews?: number;
+  profilePhoto?: string;
   user?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    status: string;
+    needsPasswordChange?: boolean;
+    isDeleted?: boolean;
     image?: string;
     profilePhoto?: string;
+    createdAt: string;
+    updatedAt: string;
   };
   createdAt: string;
   updatedAt: string;
@@ -129,13 +139,14 @@ export interface AgentRegistrationData {
 
 export interface AgentUpdateData {
   name?: string;
-  phone?: string;
+  contactNumber?: string;
   address?: string;
   bio?: string;
   specialization?: string[];
   commissionRate?: number;
+  experience?: number;
   isAvailable?: boolean;
-  image?: string;
+  profilePhoto?: string;
 }
 
 export interface AgentSearchParams {

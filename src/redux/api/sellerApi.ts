@@ -123,13 +123,25 @@ export const sellerApi = baseApi.injectEndpoints({
     }),
 
     // Agent Collaboration
-    requestAgent: builder.mutation({
+    requestAgentCollaboration: builder.mutation({
       query: (data) => ({
         url: "/sellers/agents/request",
         method: "POST",
         body: data,
       }),
       invalidatesTags: ["Seller", "Property"],
+    }),
+    // Add this to your endpoints in sellerApi
+    getSellerEarnings: builder.query({
+      query: (params) => ({
+        url: "/sellers/earnings",
+        params: {
+          ...params,
+          startDate: params?.startDate,
+          endDate: params?.endDate,
+        },
+      }),
+      providesTags: ["Seller"],
     }),
     getAssignedAgents: builder.query({
       query: () => "/sellers/agents/assigned",
@@ -160,7 +172,8 @@ export const {
   useUpdateSellerViewingStatusMutation,
   useGetSellerStatsQuery,
   useGetSalesHistoryQuery,
-  useRequestAgentMutation,
+  useGetSellerEarningsQuery,
+  useRequestAgentCollaborationMutation,
   useGetAssignedAgentsQuery,
   useRemoveAgentFromPropertyMutation,
 } = sellerApi;
