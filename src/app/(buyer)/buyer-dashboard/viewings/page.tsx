@@ -14,6 +14,7 @@ import {
   MapPin,
   Home,
   Plus,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,7 +65,7 @@ export default function BuyerViewingsPage() {
   );
   const [viewingForm, setViewingForm] = useState<ViewingData>({
     date: "",
-    notes: ""
+    notes: "",
   });
 
   const { data: viewingsData, isLoading: viewingsLoading } =
@@ -81,7 +82,12 @@ export default function BuyerViewingsPage() {
 
   const viewings: IViewing[] = viewingsData?.data || [];
   const properties: IProperty[] = propertiesData?.data || [];
-  const pagination = viewingsData?.meta ?? { total: 0, page: 1, limit: 10, totalPages: 0 };
+  const pagination = viewingsData?.meta ?? {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 0,
+  };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -90,47 +96,47 @@ export default function BuyerViewingsPage() {
   const handleCreateViewing = async (propertyId: string, data: ViewingData) => {
     console.log("handleCreateViewing called with:", { propertyId, data });
     console.log("Auth state:", { isAuthenticated, user });
-    
+
     if (!isAuthenticated) {
       toast.error("Please sign in to schedule a viewing");
       return;
     }
-    
+
     if (!propertyId) {
       toast.error("Please select a property");
       return;
     }
-    
+
     if (!data.date) {
       toast.error("Please select a date and time");
       return;
     }
-    
+
     try {
       console.log("Calling createViewing mutation...");
       console.log("Original date from form:", data.date);
-      
+
       // Try different date formats
       const dateObj = new Date(data.date);
       const formats = {
         iso: dateObj.toISOString(),
         local: dateObj.toLocaleString(),
-        dateOnly: dateObj.toISOString().split('T')[0],
+        dateOnly: dateObj.toISOString().split("T")[0],
         datetimeLocal: data.date,
-        custom: dateObj.toISOString().replace('.000Z', 'Z')
+        custom: dateObj.toISOString().replace(".000Z", "Z"),
       };
-      
+
       console.log("Trying date formats:", formats);
-      
+
       const customFormat = dateObj.toISOString();
       console.log("Using ISO format:", customFormat);
-      
+
       const result = await createViewing({
         propertyId,
         viewingDate: customFormat,
         notes: data.notes,
       }).unwrap();
-      
+
       console.log("createViewing result:", result);
       toast.success("Viewing request scheduled successfully!");
       setIsBookingOpen(false);
@@ -187,7 +193,10 @@ export default function BuyerViewingsPage() {
         </div>
         <div className="space-y-6 mt-12">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-48 bg-muted rounded-[2.5rem] animate-pulse"></div>
+            <div
+              key={i}
+              className="h-48 bg-muted rounded-[2.5rem] animate-pulse"
+            ></div>
           ))}
         </div>
       </div>
@@ -198,18 +207,19 @@ export default function BuyerViewingsPage() {
     return (
       <div className="p-12 rounded-[2.5rem] bg-red-50/50 backdrop-blur-xl border border-red-100 text-center">
         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-           <AlertCircle className="w-10 h-10" />
+          <AlertCircle className="w-10 h-10" />
         </div>
         <h2 className="text-2xl font-heading font-bold text-red-900 mb-3">
           Login Required
         </h2>
         <p className="text-red-700 mb-8 max-w-sm mx-auto">
-          Sign in to your LuxeLiving account to access and manage your property viewing appointments.
+          Sign in to your LuxeLiving account to access and manage your property
+          viewing appointments.
         </p>
         <Link href="/login">
-            <Button className="bg-red-600 hover:bg-red-700 text-white rounded-2xl px-10 h-14 font-bold shadow-lg shadow-red-200 transition-all active:scale-95">
-              Go to Login
-            </Button>
+          <Button className="bg-red-600 hover:bg-red-700 text-white rounded-2xl px-10 h-14 font-bold shadow-lg shadow-red-200 transition-all active:scale-95">
+            Go to Login
+          </Button>
         </Link>
       </div>
     );
@@ -223,7 +233,7 @@ export default function BuyerViewingsPage() {
           <motion.h1
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl lg:text-5xl font-heading font-bold text-foreground tracking-tight"
+            className="text-5xl lg:text-6xl font-black text-foreground tracking-tight"
           >
             My Tours
           </motion.h1>
@@ -231,22 +241,22 @@ export default function BuyerViewingsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-muted-foreground mt-3 text-lg leading-relaxed max-w-xl"
+            className="text-muted-foreground mt-3 text-lg leading-relaxed max-w-2xl"
           >
-            Orchestrate your property discovery journey with ease and elegance.
+            Manage and track all your property viewing appointments in one place
           </motion.p>
         </div>
         <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
         >
-            <Button
+          <Button
             onClick={() => setIsBookingOpen(true)}
-            className="bg-purple-600 hover:bg-purple-700 text-white rounded-2xl h-14 px-8 font-black shadow-xl shadow-purple-200 transition-all hover:-translate-y-1 active:scale-95"
-            >
-            <Plus className="w-6 h-6 mr-2" />
+            className="bg-luxury-gold hover:bg-luxury-gold/90 text-luxury-slate rounded-xl h-12 px-6 font-bold shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 active:scale-95"
+          >
+            <Plus className="w-5 h-5 mr-2" />
             Schedule Appointment
-            </Button>
+          </Button>
         </motion.div>
       </div>
 
@@ -254,28 +264,33 @@ export default function BuyerViewingsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6">
         {[
           {
-            label: "Total Requests",
+            label: "TOTAL REQUESTS",
             value: viewings.length,
             icon: Calendar,
-            color: "bg-blue-50 text-blue-500",
+            color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
           },
           {
-            label: "Awaiting Approval",
-            value: viewings.filter((v) => v.status?.toUpperCase() === "PENDING").length,
+            label: "AWAITING APPROVAL",
+            value: viewings.filter((v) => v.status?.toUpperCase() === "PENDING")
+              .length,
             icon: AlertCircle,
-            color: "bg-yellow-50 text-yellow-600",
+            color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
           },
           {
-            label: "Scheduled",
-            value: viewings.filter((v) => v.status?.toUpperCase() === "SCHEDULED").length,
+            label: "SCHEDULED",
+            value: viewings.filter(
+              (v) => v.status?.toUpperCase() === "SCHEDULED",
+            ).length,
             icon: Clock,
-            color: "bg-purple-50 text-purple-600",
+            color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
           },
           {
-            label: "Completed",
-            value: viewings.filter((v) => v.status?.toUpperCase() === "COMPLETED").length,
+            label: "COMPLETED",
+            value: viewings.filter(
+              (v) => v.status?.toUpperCase() === "COMPLETED",
+            ).length,
             icon: CheckCircle,
-            color: "bg-emerald-50 text-emerald-600",
+            color: "bg-green-500/10 text-green-500 border-green-500/20",
           },
         ].map((stat, index) => (
           <motion.div
@@ -283,61 +298,70 @@ export default function BuyerViewingsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="p-6 lg:p-8 rounded-[2rem] bg-card border border-border shadow-soft flex items-center justify-between group hover:border-foreground/10 transition-colors"
+            className={`p-6 rounded-xl bg-card border ${stat.color} shadow-sm hover:shadow-md transition-all duration-300`}
           >
-            <div>
-              <p className="text-xs uppercase tracking-widest font-black text-muted-foreground/60 mb-1">{stat.label}</p>
-              <p className="text-3xl font-heading font-black">{stat.value}</p>
-            </div>
-            <div className={`p-3 rounded-2xl ${stat.color} transition-transform group-hover:scale-110`}>
-                <stat.icon className="w-6 h-6" />
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider opacity-70 mb-1">
+                  {stat.label}
+                </p>
+                <p className="text-3xl font-black">
+                  {stat.value.toString().padStart(2, "0")}
+                </p>
+              </div>
+              <div className={`p-3 rounded-xl bg-current/10`}>
+                <stat.icon className="w-5 h-5" />
+              </div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="bg-card/40 backdrop-blur-md p-5 rounded-3xl border border-border/50 shadow-sm"
+        className="bg-card border border-border rounded-xl p-4 shadow-sm"
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <div className="relative md:col-span-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/50" />
             <Input
-              placeholder="Filter by estate name or location..."
-              className="pl-12 h-14 rounded-2xl bg-muted/30 border-none focus:ring-2 focus:ring-purple-500/20 transition-all text-base"
+              placeholder="Search by property or location..."
+              className="pl-12 h-12 rounded-lg bg-muted/30 border-none focus:ring-2 focus:ring-luxury-gold/20 transition-all text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="md:col-span-3">
-              <Select
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value || "all")}
-              >
-                <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none px-6 font-semibold">
-                  <SelectValue placeholder="Status Filter" />
-                </SelectTrigger>
-                <SelectContent className="rounded-2xl border-none shadow-2xl">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">PendingApproval</SelectItem>
-                  <SelectItem value="scheduled">Scheduled</SelectItem>
-                  <SelectItem value="completed">Completed Tours</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex gap-2">
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value || "all")}
+            >
+              <SelectTrigger className="h-12 rounded-lg bg-muted/30 border-none px-4 font-semibold min-w-37">
+                <SelectValue placeholder="FILTER STATUS" />
+              </SelectTrigger>
+              <SelectContent className="rounded-lg border-none shadow-lg">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              className="h-12 rounded-lg border-border bg-muted/30 hover:bg-muted/40 px-4 font-semibold"
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              SORT BY DATE
+            </Button>
           </div>
-          <Button variant="ghost" className="md:col-span-3 h-14 rounded-2xl font-bold bg-muted/20 hover:bg-muted/40 px-6">
-            <Filter className="w-5 h-5 mr-2 opacity-50" />
-            Advanced
-          </Button>
         </div>
       </motion.div>
 
-      {/* Viewings List */}
+      {/* Viewings List - Data Table */}
       {viewings.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -351,7 +375,8 @@ export default function BuyerViewingsPage() {
             No active inquiries
           </h3>
           <p className="text-muted-foreground mb-10 max-w-sm mx-auto leading-relaxed">
-            Your viewing calendar is empty. Ready to discover your future home among our elite properties?
+            Your viewing calendar is empty. Ready to discover your future home
+            among our elite properties?
           </p>
           <Button
             onClick={() => setIsBookingOpen(true)}
@@ -361,128 +386,306 @@ export default function BuyerViewingsPage() {
           </Button>
         </motion.div>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {viewings.map((viewing: IViewing, index: number) => (
-            <motion.div
-              key={viewing.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="group bg-card hover:bg-muted/5 rounded-[2.5rem] border border-border shadow-soft p-1 transition-all duration-500"
-            >
-              <div className="flex flex-col h-full p-6 lg:p-8">
-                <div className="flex justify-between items-start mb-8">
-                  <div className="flex gap-2">
-                    <Badge variant="outline" className={`${getStatusColor(viewing.status)} px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ring-4 ring-background`}>
-                      {viewing.status || 'PENDING'}
-                    </Badge>
-                    
-                    {/* Payment Status Badge */}
-                    <Badge 
-                      variant="outline" 
-                      className={`${
-                        viewing.paymentStatus === "PAID" 
-                          ? "bg-green-100/80 text-green-700 border-green-200" 
-                          : "bg-orange-100/80 text-orange-700 border-orange-200"
-                      } px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border shadow-sm ring-4 ring-background`}
-                    >
-                      {viewing.paymentStatus === "PAID" ? "PAID" : "PAYMENT DUE"}
-                    </Badge>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card border border-border rounded-xl overflow-hidden shadow-lg"
+        >
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              {/* Table Header */}
+              <thead className="bg-muted/50 border-b border-border">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    PROPERTY INFORMATION
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    DATE & TIME
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    LOCATION
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    VALUE
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    STATUS
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    PAYMENT
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    ACTION
+                  </th>
+                </tr>
+              </thead>
+
+              {/* Table Body */}
+              <tbody className="divide-y divide-border/30">
+                {viewings.map((viewing: IViewing, index: number) => (
+                  <motion.tr
+                    key={viewing.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-muted/20 transition-colors duration-200"
+                  >
+                    {/* Property Information Column */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-start gap-3">
+                        <div className="h-12 w-12 rounded-lg bg-linear-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white shadow-md shrink-0">
+                          <Home className="w-6 h-6" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground text-sm">
+                            {viewing.property?.title || "Spacious & Elegant Family Apartment"}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {viewing.property?.bedrooms?.toLocaleString() || 3} Beds •{" "}
+                            {viewing.property?.bathrooms?.toLocaleString() || 2} Baths •{" "}
+                            {viewing.property?.area?.toLocaleString() || 2500} sqft
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Date & Time Column */}
+                    <td className="px-4 py-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center text-sm font-medium text-foreground">
+                          <Calendar className="w-4 h-4 mr-2 text-purple-400" />
+                          {viewing.viewingDate
+                            ? new Date(viewing.viewingDate).toLocaleDateString(
+                                undefined,
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )
+                            : "Apr 17, 2026"}
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Clock className="w-4 h-4 mr-2 text-purple-400" />
+                          {viewing.viewingDate
+                            ? new Date(viewing.viewingDate).toLocaleTimeString(
+                                [],
+                                { hour: "2-digit", minute: "2-digit" },
+                              )
+                            : "03:27 AM"}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Location Column */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="w-4 h-4 mr-2 text-purple-400" />
+                        {viewing.property?.location || "New York"}
+                      </div>
+                    </td>
+
+                    {/* Value Column */}
+                    <td className="px-4 py-4">
+                      <p className="font-bold text-foreground text-sm">
+                        ${viewing.property?.price?.toLocaleString() || '999'}
+                      </p>
+                    </td>
+
+                    {/* Status Column */}
+                    <td className="px-4 py-4">
+                      <Badge
+                        className={`${getStatusColor(viewing.status)} px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm`}
+                      >
+                        {viewing.status?.toUpperCase() || "SCHEDULED"}
+                      </Badge>
+                    </td>
+
+                    {/* Payment Column */}
+                    <td className="px-4 py-4">
+                      <Badge
+                        className={`${
+                          viewing.paymentStatus === "PAID"
+                            ? "bg-green-500/20 text-green-600 border-green-300"
+                            : "bg-orange-500/20 text-orange-600 border-orange-300"
+                        } px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border shadow-sm`}
+                      >
+                        {viewing.paymentStatus === "PAID" ? "PAID" : "UNPAID"}
+                      </Badge>
+                    </td>
+
+                    {/* Action Column */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                        {/* Payment Button */}
+                        {viewing.paymentStatus !== "PAID" &&
+                          (viewing.status?.toUpperCase() === "PENDING" ||
+                            viewing.status === "pending" ||
+                            viewing.status?.toUpperCase() === "SCHEDULED") && (
+                            <PaymentButton
+                              bookingId={viewing.id || ""}
+                              viewingTitle={`${viewing.property?.title} Viewing`}
+                              className="h-8 px-3 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg text-xs font-bold shadow-md transition-all duration-300"
+                            >
+                              <CreditCard className="w-3 h-3 mr-1" />
+                              Pay
+                            </PaymentButton>
+                          )}
+
+                        {/* View Details Button */}
+                        <Link
+                          href={`/properties/${viewing.property?.id || ""}`}
+                        >
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 px-3 rounded-lg border-purple-300/30 text-purple-600 hover:bg-purple-600 hover:text-white text-xs font-semibold transition-all duration-300"
+                          >
+                            View
+                          </Button>
+                        </Link>
+
+                        {/* Cancel Button */}
+                        {viewing.status?.toUpperCase() === "PENDING" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleCancelViewing(viewing.id || "")
+                            }
+                            className="h-8 px-3 rounded-lg text-red-500 hover:bg-red-50 text-xs font-semibold transition-all duration-300"
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Responsive Cards */}
+          <div className="lg:hidden divide-y divide-border/30">
+            {viewings.map((viewing: IViewing, index: number) => (
+              <motion.div
+                key={viewing.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="p-4 space-y-3"
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-linear-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white">
+                      <Home className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-foreground text-sm">
+                        {viewing.property?.title || "Exclusive Estate"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {viewing.property?.location || "Prime Location"}
+                      </p>
+                    </div>
                   </div>
-                  
-                  <div className="h-14 w-14 rounded-2xl bg-luxury-emerald/5 border border-luxury-emerald/10 flex items-center justify-center text-luxury-emerald group-hover:bg-luxury-emerald group-hover:text-white transition-all duration-500 shadow-sm">
-                    <Home className="w-7 h-7" />
+                  <div className="flex gap-1">
+                    <Badge
+                      className={`${getStatusColor(viewing.status)} px-2 py-1 rounded-full text-[10px] font-bold uppercase`}
+                    >
+                      {viewing.status || "PENDING"}
+                    </Badge>
+                    <Badge
+                      className={`${
+                        viewing.paymentStatus === "PAID"
+                          ? "bg-green-500/20 text-green-600 border-green-300"
+                          : "bg-orange-500/20 text-orange-600 border-orange-300"
+                      } px-2 py-1 rounded-full text-[10px] font-bold uppercase`}
+                    >
+                      {viewing.paymentStatus === "PAID" ? "PAID" : "UNPAID"}
+                    </Badge>
                   </div>
                 </div>
 
-                <div className="flex-1 space-y-6">
+                {/* Details */}
+                <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <h3 className="text-2xl font-heading font-black text-foreground group-hover:text-purple-600 transition-colors duration-300">
-                      {viewing.property?.title || "Exclusive Estate"}
-                    </h3>
-                    <div className="flex items-center text-muted-foreground mt-2 font-medium">
-                      <MapPin className="w-4 h-4 mr-2 text-purple-500" />
-                      <span className="text-sm">
-                        {viewing.property?.location || "Prime Location"}
-                      </span>
-                    </div>
+                    <p className="text-xs text-purple-400 font-semibold mb-1">Agent</p>
+                    <p className="text-foreground font-medium">
+                      {viewing.agent?.name || 'Naimur'}
+                    </p>
                   </div>
-
-                  <div className="grid grid-cols-2 gap-4 py-6 border-y border-border/50">
-                    <div className="space-y-1">
-                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/50">Appointment Date</p>
-                        <div className="flex items-center text-foreground font-bold text-lg">
-                           <Calendar className="w-4 h-4 mr-2 text-purple-400" />
-                           {viewing.viewingDate ? new Date(viewing.viewingDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Pending'}
-                        </div>
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/50">Arrival Time</p>
-                        <div className="flex items-center text-foreground font-bold text-lg">
-                           <Clock className="w-4 h-4 mr-2 text-purple-400" />
-                           {viewing.viewingDate ? new Date(viewing.viewingDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'TBD'}
-                        </div>
-                    </div>
+                  <div>
+                    <p className="text-xs text-purple-400 font-semibold mb-1">Date</p>
+                    <p className="text-foreground font-medium">
+                      {viewing.viewingDate ? new Date(viewing.viewingDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'Apr 17, 2026'}
+                    </p>
                   </div>
+                  <div>
+                    <p className="text-xs text-purple-400 font-semibold mb-1">Time</p>
+                    <p className="text-foreground font-medium">
+                      {viewing.viewingDate ? new Date(viewing.viewingDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '03:27 AM'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-purple-400 font-semibold mb-1">Value</p>
+                    <p className="text-foreground font-bold">
+                      ${viewing.property?.price?.toLocaleString() || '999'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-purple-400 font-semibold mb-1">Notes</p>
+                    <p className="text-muted-foreground text-xs truncate">
+                      {viewing.notes || 'None'}
+                    </p>
+                  </div>
+                </div>
 
-                  {viewing.notes && (
-                    <div className="bg-muted/30 rounded-2xl p-4 border border-border/20 italic text-sm text-muted-foreground leading-relaxed">
-                      &ldquo;{viewing.notes}&rdquo;
-                    </div>
+                {/* Actions */}
+                <div className="flex gap-2 pt-2">
+                  {(viewing.paymentStatus !== "PAID" &&
+                    (viewing.status?.toUpperCase() === "PENDING" ||
+                      viewing.status === "pending" ||
+                      viewing.status?.toUpperCase() === "SCHEDULED")) && (
+                    <PaymentButton
+                      bookingId={viewing.id || ""}
+                      viewingTitle={`${viewing.property?.title} Viewing`}
+                      className="flex-1 h-8 bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg text-xs font-bold"
+                    >
+                      <CreditCard className="w-3 h-3 mr-1" />
+                      Pay
+                    </PaymentButton>
+                  )}
+                  <Link
+                    href={`/properties/${viewing.property?.id || ""}`}
+                    className="flex-1"
+                  >
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 px-3 rounded-lg border-purple-300/30 text-purple-600 hover:bg-purple-600 hover:text-white text-xs font-semibold"
+                    >
+                      View
+                    </Button>
+                  </Link>
+                  {viewing.status?.toUpperCase() === "PENDING" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCancelViewing(viewing.id || "")}
+                      className="h-8 px-3 rounded-lg text-red-500 hover:bg-red-50 text-xs font-semibold"
+                    >
+                      Cancel
+                    </Button>
                   )}
                 </div>
-
-                <div className="mt-10 flex items-center justify-between">
-                   <div className="space-y-1">
-                      <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/50">Estate Value</p>
-                      <p className="text-2xl font-black text-foreground">${viewing.property?.price?.toLocaleString()}</p>
-                   </div>
-                   
-                   <div className="flex gap-3">
-                         {/* Show payment button for viewings that haven't been paid for */}
-                         {(viewing.paymentStatus !== "PAID" && (viewing.status?.toUpperCase() === "PENDING" || viewing.status === "pending" || viewing.status?.toUpperCase() === "SCHEDULED")) && (
-                            <PaymentButton
-                                bookingId={viewing.id || ""}
-                                viewingTitle={`${viewing.property?.title} Viewing`}
-                                className="rounded-2xl h-14 px-8 font-black text-sm bg-foreground text-background shadow-xl hover:bg-purple-600 hover:text-white transition-all active:scale-95"
-                            />
-                        )}
-                         
-                         {/* Show paid status for completed payments */}
-                         {viewing.paymentStatus === "PAID" && (
-                            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-green-100 text-green-700 border border-green-200">
-                                <CheckCircle className="w-4 h-4" />
-                                <span className="font-semibold text-sm">Paid</span>
-                            </div>
-                         )}
-                        
-                        <div className="flex flex-col gap-2">
-                            <Link href={`/properties/${viewing.property?.id || ''}`}>
-                                <Button
-                                    variant="outline"
-                                    className="rounded-2xl h-12 px-6 font-black text-xs border-foreground/10 hover:bg-foreground hover:text-background transition-colors"
-                                >
-                                    Details
-                                </Button>
-                            </Link>
-                            
-                            {viewing.status?.toUpperCase() === "PENDING" && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleCancelViewing(viewing.id || "")}
-                                className="text-red-500 hover:bg-red-50 rounded-xl font-bold text-xs"
-                            >
-                                Withdraw
-                            </Button>
-                            )}
-                        </div>
-                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       )}
 
       {/* Booking Dialog */}
@@ -529,25 +732,33 @@ export default function BuyerViewingsPage() {
             )}
 
             <div className="space-y-3">
-              <Label className="uppercase tracking-widest text-[10px] font-black opacity-50">Select Date & Time</Label>
+              <Label className="uppercase tracking-widest text-[10px] font-black opacity-50">
+                Select Date & Time
+              </Label>
               <Input
                 id="date"
                 type="datetime-local"
                 className="h-14 rounded-2xl bg-luxury-slate/5 border-none text-lg font-bold"
                 min={new Date().toISOString().slice(0, 16)}
                 value={viewingForm.date}
-                onChange={e => setViewingForm(prev => ({ ...prev, date: e.target.value }))}
+                onChange={(e) =>
+                  setViewingForm((prev) => ({ ...prev, date: e.target.value }))
+                }
               />
             </div>
 
             <div className="space-y-3">
-              <Label className="uppercase tracking-widest text-[10px] font-black opacity-50">Special Requirements</Label>
+              <Label className="uppercase tracking-widest text-[10px] font-black opacity-50">
+                Special Requirements
+              </Label>
               <Textarea
                 id="notes"
                 placeholder="Any specific focus for your tour?"
                 className="rounded-2xl bg-luxury-slate/5 border-none p-6 text-lg min-h-30 resize-none"
                 value={viewingForm.notes}
-                onChange={e => setViewingForm(prev => ({ ...prev, notes: e.target.value }))}
+                onChange={(e) =>
+                  setViewingForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
               />
             </div>
 
@@ -560,7 +771,9 @@ export default function BuyerViewingsPage() {
                 Cancel
               </Button>
               <Button
-                onClick={() => handleCreateViewing(selectedProperty?.id || "", viewingForm)}
+                onClick={() =>
+                  handleCreateViewing(selectedProperty?.id || "", viewingForm)
+                }
                 className="flex-1 h-16 rounded-2xl bg-luxury-slate text-white font-black text-lg shadow-xl hover:bg-black transition-all"
                 disabled={!selectedProperty || !viewingForm.date}
               >

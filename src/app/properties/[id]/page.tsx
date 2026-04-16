@@ -81,14 +81,10 @@ export default function PropertyDetailsPage() {
 
     try {
       const viewingData = {
-        property: id as string,
-        name: inquiryForm.name,
-        email: inquiryForm.email,
-        phone: inquiryForm.phone,
-        message: inquiryForm.message,
-        preferredDate: new Date(preferredDate).toISOString(),
-        preferredTime,
-        status: 'pending'
+        propertyId: id as string,
+        preferredDate: preferredDate,
+        preferredTime: preferredTime,
+        notes: inquiryForm.message
       };
 
       await createViewing(viewingData).unwrap();

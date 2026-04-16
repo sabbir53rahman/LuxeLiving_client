@@ -42,9 +42,9 @@ export default function PaymentButton({
     try {
       const result = await createCheckoutSession(bookingId!).unwrap();
 
-      if (result.data?.url) {
+      if (result.data?.paymentSessionUrl) {
         // Redirect to Stripe Checkout
-        window.location.href = result.data.url;
+        window.location.href = result.data.paymentSessionUrl;
       } else {
         toast.error("Failed to initialize payment. Please try again.");
       }

@@ -12,6 +12,8 @@ import {
   MapPin,
   Users,
   Phone,
+  Search,
+  Filter,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,32 +28,80 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { logout } from "@/redux/features/auth/authSlice";
 import { cn } from "@/lib/utils";
+import { useGetPropertiesQuery } from "@/redux/api/propertyApi";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { IProperty } from "@/types/index";
 // import { ThemeToggle } from "./ThemeToggle";
 
 const PROPERTY_CATEGORIES = [
-  { label: "Luxury Villas", href: "/properties/villas", icon: Building },
-  { label: "Penthouses", href: "/properties/penthouses", icon: Building },
-  { label: "Mansions", href: "/properties/mansions", icon: Building },
-  { label: "Apartments", href: "/properties/apartments", icon: Building },
-  { label: "Condos", href: "/properties/condos", icon: Building },
+  { label: "Luxury Villas", type: "villa", icon: Building },
+  { label: "Penthouses", type: "penthouse", icon: Building },
+  { label: "Mansions", type: "mansion", icon: Building },
+  { label: "Apartments", type: "apartment", icon: Building },
+  { label: "Condos", type: "condo", icon: Building },
 ];
 
 const LOCATIONS = [
-  { label: "New York", href: "/locations/new-york" },
-  { label: "Los Angeles", href: "/locations/los-angeles" },
-  { label: "Miami", href: "/locations/miami" },
-  { label: "Dubai", href: "/locations/dubai" },
-  { label: "London", href: "/locations/london" },
+  { label: "New York", location: "New York" },
+  { label: "Los Angeles", location: "Los Angeles" },
+  { label: "Miami", location: "Miami" },
+  { label: "Dubai", location: "Dubai" },
+  { label: "London", location: "London" },
 ];
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [searchFilters, setSearchFilters] = useState({
+    location: "",
+    type: "",
+    minPrice: "",
+    maxPrice: ""
+  });
+  const [showFilters, setShowFilters] = useState(false);
   // const [isLocationsOpen, setIsLocationsOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const dispatch = useAppDispatch();
   const router = useRouter();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm]);
+
+  // Search properties with filters
+  const searchParams = {
+    searchTerm: debouncedSearchTerm,
+    location: searchFilters.location || undefined,
+    type: searchFilters.type || undefined,
+    minPrice: searchFilters.minPrice ? Number(searchFilters.minPrice) : undefined,
+    maxPrice: searchFilters.maxPrice ? Number(searchFilters.maxPrice) : undefined,
+    limit: 8
+  };
+
+  const { data: searchResults, isLoading: isSearchLoading } = useGetPropertiesQuery(
+    searchParams,
+    {
+      skip: !debouncedSearchTerm && !searchFilters.location && !searchFilters.type && !searchFilters.minPrice && !searchFilters.maxPrice
+    }
+  );
 
   const handleLogout = () => {
     dispatch(logout());
@@ -76,6 +126,9 @@ export default function Navbar() {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
+      }
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
     };
   }, []);
@@ -129,8 +182,8 @@ export default function Navbar() {
                       <div className="space-y-2">
                         {PROPERTY_CATEGORIES.map((category) => (
                           <Link
-                            key={category.href}
-                            href={category.href}
+                            key={category.type}
+                            href={`/properties?type=${category.type}`}
                             className="flex items-center gap-3 text-white/80 hover:text-luxury-gold hover:bg-white/10 p-2 rounded transition-all"
                           >
                             <category.icon className="h-4 w-4" />
@@ -148,8 +201,8 @@ export default function Navbar() {
                       <div className="space-y-2">
                         {LOCATIONS.map((location) => (
                           <Link
-                            key={location.href}
-                            href={location.href}
+                            key={location.location}
+                            href={`/properties?location=${encodeURIComponent(location.location)}`}
                             className="block text-white/80 hover:text-luxury-gold hover:bg-white/10 p-2 rounded transition-all"
                           >
                             {location.label}
@@ -202,6 +255,162 @@ export default function Navbar() {
               </Link>
             </li>
           </ul>
+
+          {/* Search Bar */}
+          <div className="hidden lg:flex items-center gap-3 relative">
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+                <Input
+                  type="text"
+                  placeholder="Search properties..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={() => setIsSearchOpen(true)}
+                  className="w-64 pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder-white/50 focus:border-luxury-gold focus:ring-luxury-gold"
+                />
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-luxury-gold transition-colors"
+                >
+                  <Filter className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Search Results Dropdown */}
+              {isSearchOpen && (debouncedSearchTerm || searchFilters.location || searchFilters.type) && (
+                <div className="absolute top-full left-0 w-96 mt-2 glass-strong rounded-lg border border-white/20 shadow-2xl max-h-96 overflow-y-auto">
+                  {isSearchLoading ? (
+                    <div className="p-4 text-center text-white/60">
+                      Searching...
+                    </div>
+                  ) : searchResults?.data?.length > 0 ? (
+                    <div className="p-2">
+                      <div className="px-2 py-1.5 text-sm font-medium text-white/60 border-b border-white/20">
+                        Found {searchResults.data.length} properties
+                      </div>
+                      {searchResults.data.map((property: IProperty) => (
+                        <Link
+                          key={property.id}
+                          href={`/properties/${property.id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchTerm("");
+                          }}
+                          className="block p-3 hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex gap-3">
+                            <div className="w-16 h-16 bg-white/20 rounded-lg shrink-0 overflow-hidden relative">
+                              {property.images?.[0] && (
+                                <Image
+                                  src={property.images[0]}
+                                  alt={property.title}
+                                  fill
+                                  className="object-cover"
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-white font-medium truncate">{property.title}</h4>
+                              <p className="text-white/60 text-sm truncate">{property.location}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-luxury-gold font-semibold">
+                                  ${property.price?.toLocaleString()}
+                                </span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {property.bedrooms} bed
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-white/60">
+                      No properties found
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Filters Panel */}
+              {showFilters && (
+                <div className="absolute top-full left-0 w-80 mt-2 glass-strong rounded-lg border border-white/20 shadow-2xl p-4">
+                  <h3 className="text-luxury-gold font-semibold mb-4">Search Filters</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-white/80 text-sm">Location</label>
+                      <Input
+                        type="text"
+                        placeholder="Enter location..."
+                        value={searchFilters.location}
+                        onChange={(e) => setSearchFilters(prev => ({ ...prev, location: e.target.value }))}
+                        className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-white/80 text-sm">Property Type</label>
+                      <select
+                        value={searchFilters.type}
+                        onChange={(e) => setSearchFilters(prev => ({ ...prev, type: e.target.value }))}
+                        className="mt-1 w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-md"
+                      >
+                        <option value="">All Types</option>
+                        <option value="villa">Villa</option>
+                        <option value="penthouse">Penthouse</option>
+                        <option value="mansion">Mansion</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="condo">Condo</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-white/80 text-sm">Min Price</label>
+                        <Input
+                          type="number"
+                          placeholder="Min"
+                          value={searchFilters.minPrice}
+                          onChange={(e) => setSearchFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                          className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/80 text-sm">Max Price</label>
+                        <Input
+                          type="number"
+                          placeholder="Max"
+                          value={searchFilters.maxPrice}
+                          onChange={(e) => setSearchFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                          className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSearchFilters({ location: "", type: "", minPrice: "", maxPrice: "" });
+                          setSearchTerm("");
+                        }}
+                        variant="ghost"
+                        className="text-white hover:text-luxury-gold"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowFilters(false)}
+                        className="bg-luxury-gold text-luxury-slate hover:bg-luxury-gold/90"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Desktop Auth */}
           <div className="hidden lg:flex items-center gap-3">
@@ -308,10 +517,164 @@ export default function Navbar() {
         <div
           className={cn(
             "lg:hidden overflow-hidden transition-all duration-300",
-            isMenuOpen ? "max-h-96 pb-4" : "max-h-0",
+            isMenuOpen ? "max-h-screen pb-4" : "max-h-0",
           )}
         >
           <div className="flex flex-col gap-1 pt-2">
+            {/* Mobile Search */}
+            <div className="px-4 py-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
+                <Input
+                  type="text"
+                  placeholder="Search properties..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-10 bg-white/10 border-white/20 text-white placeholder-white/50 focus:border-luxury-gold focus:ring-luxury-gold"
+                />
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/50 hover:text-luxury-gold transition-colors"
+                >
+                  <Filter className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Mobile Search Results */}
+              {isSearchOpen && (debouncedSearchTerm || searchFilters.location || searchFilters.type) && (
+                <div className="mt-2 glass-strong rounded-lg border border-white/20 shadow-2xl max-h-64 overflow-y-auto">
+                  {isSearchLoading ? (
+                    <div className="p-4 text-center text-white/60">
+                      Searching...
+                    </div>
+                  ) : searchResults?.data?.length > 0 ? (
+                    <div className="p-2">
+                      <div className="px-2 py-1.5 text-sm font-medium text-white/60 border-b border-white/20">
+                        Found {searchResults.data.length} properties
+                      </div>
+                      {searchResults.data.map((property: IProperty) => (
+                        <Link
+                          key={property.id}
+                          href={`/properties/${property.id}`}
+                          onClick={() => {
+                            setIsSearchOpen(false);
+                            setSearchTerm("");
+                            setIsMenuOpen(false);
+                          }}
+                          className="block p-3 hover:bg-white/10 transition-colors"
+                        >
+                          <div className="flex gap-3">
+                            <div className="w-16 h-16 bg-white/20 rounded-lg shrink-0 overflow-hidden relative">
+                              {property.images?.[0] && (
+                                <Image
+                                  src={property.images[0]}
+                                  alt={property.title}
+                                  fill
+                                  className="object-cover"
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-white font-medium truncate">{property.title}</h4>
+                              <p className="text-white/60 text-sm truncate">{property.location}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-luxury-gold font-semibold">
+                                  ${property.price?.toLocaleString()}
+                                </span>
+                                <Badge variant="secondary" className="text-xs">
+                                  {property.bedrooms} bed
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-white/60">
+                      No properties found
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Mobile Filters */}
+              {showFilters && (
+                <div className="mt-2 glass-strong rounded-lg border border-white/20 shadow-2xl p-4">
+                  <h3 className="text-luxury-gold font-semibold mb-4">Search Filters</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-white/80 text-sm">Location</label>
+                      <Input
+                        type="text"
+                        placeholder="Enter location..."
+                        value={searchFilters.location}
+                        onChange={(e) => setSearchFilters(prev => ({ ...prev, location: e.target.value }))}
+                        className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-white/80 text-sm">Property Type</label>
+                      <select
+                        value={searchFilters.type}
+                        onChange={(e) => setSearchFilters(prev => ({ ...prev, type: e.target.value }))}
+                        className="mt-1 w-full px-3 py-2 bg-white/10 border border-white/20 text-white rounded-md"
+                      >
+                        <option value="">All Types</option>
+                        <option value="villa">Villa</option>
+                        <option value="penthouse">Penthouse</option>
+                        <option value="mansion">Mansion</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="condo">Condo</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-white/80 text-sm">Min Price</label>
+                        <Input
+                          type="number"
+                          placeholder="Min"
+                          value={searchFilters.minPrice}
+                          onChange={(e) => setSearchFilters(prev => ({ ...prev, minPrice: e.target.value }))}
+                          className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/80 text-sm">Max Price</label>
+                        <Input
+                          type="number"
+                          placeholder="Max"
+                          value={searchFilters.maxPrice}
+                          onChange={(e) => setSearchFilters(prev => ({ ...prev, maxPrice: e.target.value }))}
+                          className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          setSearchFilters({ location: "", type: "", minPrice: "", maxPrice: "" });
+                          setSearchTerm("");
+                        }}
+                        variant="ghost"
+                        className="text-white hover:text-luxury-gold"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => setShowFilters(false)}
+                        className="bg-luxury-gold text-luxury-slate hover:bg-luxury-gold/90"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Link
               href="/properties"
               className="px-4 py-2 text-sm font-medium text-white/80 hover:text-luxury-gold rounded-md hover:bg-white/10 transition-colors"
